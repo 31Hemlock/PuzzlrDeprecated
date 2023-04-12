@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzlr</title>
+
+</head>
+
+<body>
+    <div id="Application">
+        <div id="main"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+        
+        <div id="mainmenu" class="startmenu mm">
+            <div class="startmenu-content mm">
+                <span id="mm-close" class="close">&times;</span>
+                <h2 class="mm">Welcome to Puzzlr!</h2>
+                <h4 class="mm">Choose an image to get started:</h4>
+                <input type="file" id="mm-file-input" class="mm">
+                <form id="url-form" class="mm">
+                    <h4 class="mm">Or, reference a file on the internet:</h4>
+                    <input type="text" id="mm-text-input" class="mm" name="url" placeholder="https://awesomesite.com/totally-sick-picture-of-a-cloud-or-something">
+                    <button id="externalUrl" class="mm-submit-btn mm">Submit</button>
+                </form>
+                <h4 class="mm">Test your geography skills here:</h4>
+                <div id="imageblocks-geography" class="geography mm"></div>
+                <h4 class="mm">Or, choose one of our images!</h4>
+                <div class="mm" id="imageblocks-generated"></div>
+            </div>
+        </div>
+            <!-- <div id="escmenu" class="escmenu">
+            <div class="escmenu-content escmenu">
+                <span id="close" class="close escmenu">&times;</span>
+                <h2 class="escmenu">Customize Experience</h2>
+                <input type="file" id="file-input" class="escmenu">
+            </div>
+            </div> -->
+
+
+
+    </div>
+
+
+
+
+</body>
+
+</html>
