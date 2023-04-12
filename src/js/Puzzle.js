@@ -7,7 +7,7 @@ import {
 import { rotationValues } from './constants'
 
 export class Puzzle{
-    constructor(svg, texture, extrudeDepth = 50) { // consider adding thumbnail/puzzle dims
+    constructor(svg, texture, extrudeDepth = 30) { // consider adding thumbnail/puzzle dims
         this.extrudeDepth = extrudeDepth
         this.svg = svg
         this.svgLoader = new SVGLoader()
@@ -34,7 +34,6 @@ export class Puzzle{
       let pieceArray = []
       let svgData = this.svgLoader.parse(this.svg)
       let paths = svgData.paths
-      console.log(paths)
       let extrusionSettings = {
         depth: this.extrudeDepth,
         bevelEnabled: false
@@ -75,7 +74,7 @@ export class Puzzle{
           // }
 
           //uncomment for code to work
-          piece.position.set(getRandBetween(-450, 450), getRandBetween(-400, 400), 0)
+          piece.position.set(getRandBetween(0 - (this.texture.image.width/2), this.texture.image.width/2), getRandBetween(0 - this.texture.image.height/2, this.texture.image.height / 2), 0)
           piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
           piece.geometry.center()
 

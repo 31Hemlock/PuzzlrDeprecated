@@ -7,7 +7,7 @@ export class MainMenu {
             this.close()
         })
         this.init()
-        this.appearanceState = 0
+        this.appearanceState = 1
     }
 
     init() {

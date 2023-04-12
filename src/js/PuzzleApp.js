@@ -18,6 +18,10 @@ import {
 import {
     MainMenu
 } from './MainMenu.js'
+import  {
+    ImagePreview
+} from './ImagePreview'
+import * as utils from './utils.js'
 
 
 
@@ -56,12 +60,10 @@ export class PuzzleApp {
         this.spotLight.shadow.mapSize.height = 1024;
 
         this.renderer.setPixelRatio(window.devicePixelRatio)
-        this.renderer.setSize(window.innerWidth, window.innerHeight)
         this.renderer.shadowMap.enabled = true
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
         this.scene.background = new THREE.Color(0xf0f0f0)
-
         // add everything to the scene
         this.scene.add(this.camera);
         this.scene.add(this.ambientLight)
@@ -79,7 +81,14 @@ export class PuzzleApp {
         urlForm.addEventListener('submit', this.#onFormSubmit.bind(this))
 
         //Postprocessing
+        // When adding a composer to the scene, the following bug occurs:
+        // When the window is loaded in a small resolution and then resized to be a large resolution,
+        // the textures of the pieces become blurry. To prevent this, have to set the size of the renderer
+        // to the maximum expected size of the window before creating the EffectComposer. Can reset it afterwards.
+        this.renderer.setSize(2560, 1440)
         this.composer = new EffectComposer( this.renderer )
+        this.renderer.setSize(window.innerWidth, window.innerHeight) // set back to window size
+
         this.renderPass = new RenderPass( this.scene, this.camera )
         this.composer.addPass( this.renderPass )
 
@@ -99,12 +108,12 @@ export class PuzzleApp {
         this.deltaCameraZ = 0
         
         this.init()
+
         this.mainMenu.input.addEventListener('change', (event) => {
             console.log('event occurred')
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.addEventListener('load', () => {
-                console.log('newpuz')
                 this.makeNewPuzzle(reader.result)    
             });
         
@@ -112,17 +121,25 @@ export class PuzzleApp {
 
         })
 
+        utils.loadImages()
+
         }
 
     async init(image = 'images/7Cw2iDV.jpeg') {
-        console.log(image)
+
+        if (this.imagePreview) {
+            this.imagePreview.setSource(image)
+        } else {
+            this.imagePreview = new ImagePreview(image)
+        }
+
         let texturePrepper = new TexturePrep(image)
         let texture = await texturePrepper.init()
         console.log(texture)
         let avg_size = (texture.image.width + texture.image.height) / 2
         let piece_size = avg_size / 100
 
-        let total_pieces = Math.min(Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size), 40)
+        let total_pieces = Math.min(Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size), 20)
         let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)))
         let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)))
         console.log(wideReps, highReps)
@@ -130,14 +147,16 @@ export class PuzzleApp {
         const svgData = svgFile.create()
 
         this.puzzle = new Puzzle(svgData, texture)
-        this.scene.add(this.puzzle.getThumbMesh())
-    
+        // this.scene.add(this.puzzle.getThumbMesh())
+        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        console.log(this.camera.position.z)
         const puzzlePieces = this.puzzle.createPieces()
         puzzlePieces.forEach(piece => {
             this.scene.add(piece);
         })
         this.initDragControls()
         this.render()
+
 
         
         // const svgData = fetch('./geography/wikirealsvg.svg').then(response => response.text()).then(data => {
@@ -155,6 +174,7 @@ export class PuzzleApp {
         //     this.render()
     
         // })
+
     
     }
 
@@ -169,8 +189,6 @@ export class PuzzleApp {
         for (let i=this.scene.children.length; i>=0; i--) {
             if (this.scene.children[i] instanceof Piece || 
                 this.scene.children[i] instanceof PieceGroup) {
-                console.log(this.scene.children[i])
-                console.log('disposing!')
                 this.scene.children[i].dispose()
                 this.scene.remove(this.scene.children[i]);
                 } else if (this.scene.children[i] instanceof THREE.Mesh) {
@@ -277,7 +295,6 @@ export class PuzzleApp {
 
     removeDragControls() {
         if (this.controls) {
-            console.log('removing drag controls')
             // this.controls.removeEventListener('dragstart', this.#dragStart.bind(this))
             // this.controls.removeEventListener('drag', this.#onDrag.bind(this));
             // this.controls.removeEventListener('dragend', this.#onDragEnd.bind(this)) 
@@ -301,23 +318,43 @@ export class PuzzleApp {
 
 
     #onWindowResize() {
+        this.renderer.setSize(window.innerWidth, window.innerHeight)
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
     
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.render(this.scene, this.camera)
-    
+        // this.puzzle.texture.needsUpdate = true;
+
+
+        this.updateTextures(this.scene);
+
     }
 
     #dragStart(event) {
         this.outlinePass.selectedObjects = [event.object]
         this.dragActiveObj = event.object;
+        this.imagePreview.setNonInteractive()
         this.draggedObjTimer = performance.now();
     }
 
     #onDrag(event) {
         this.render()
     }
+
+    updateTextures(object) {
+        if (object.material && object.material.map) {
+          object.material.map.needsUpdate = true;
+        }
+      
+        if (object instanceof PieceGroup) {
+            if (object.children) {
+                object.children.forEach(this.updateTextures);
+              }
+      
+        }
+      }
+      
 
     mapElapsedTime(elapsedTime) {
         // Clamp elapsedTime between 0 and 1 for ramp-up
@@ -338,7 +375,7 @@ export class PuzzleApp {
         // const mappedValue = (1 - t) * rampUpMapped + t * oscillationMapped;
         
         // return mappedValue;
-        return 35;
+        return 10;
     }
       
 
@@ -346,6 +383,7 @@ export class PuzzleApp {
         this.outlinePass.selectedObjects = []
         this.dragActiveObj.position.z = 0
         this.dragActiveObj = null
+        this.imagePreview.setInteractive()
         event.object.moved()
         // for (let i = this.scene.children.length - 1; i >= 0; i--) {
         //     const child = this.scene.children[i];
@@ -436,9 +474,14 @@ export class PuzzleApp {
         }
     }      
     #onMouseUp(event) {
+        console.log(event.target)
+        if (event.target.classList.contains("chosen-image")) {
+            this.makeNewPuzzle(event.target.src)
+        }
         if (!event.target.classList.contains("mm")) {
             this.mainMenu.close()
         }
+
         if (event.button === 1) {
             // middle mouse button was released
             this.isMiddleButtonDown = false;
@@ -447,15 +490,18 @@ export class PuzzleApp {
     }
 
     #onWheel(event) {
-        this.deltaCameraZ += event.deltaY;
-        while (this.deltaCameraZ != 0) {
-            let newPos = this.camera.position.z + this.deltaCameraZ/10
-            if (!(newPos > 7000) && !(newPos < 200)) {
-                this.camera.position.z = newPos
-            }
-            this.deltaCameraZ = Math.abs(this.deltaCameraZ) > 1 ? this.deltaCameraZ/10 : this.deltaCameraZ = 0;
-            this.render()
-        }
+        if (this.mainMenu.appearance() == 0) {
+            this.deltaCameraZ += event.deltaY;
+            while (this.deltaCameraZ != 0) {
+                let newPos = this.camera.position.z + this.deltaCameraZ/10
+                if (!(newPos > 7000) && !(newPos < 200)) {
+                    this.camera.position.z = newPos
+                }
+                this.deltaCameraZ = Math.abs(this.deltaCameraZ) > 1 ? this.deltaCameraZ/10 : this.deltaCameraZ = 0;
+                this.render()
+            } 
+
     }
 
+    }
 }

@@ -86,3 +86,40 @@ export function rotateAny(obj, direction) {
     let main = new PuzzleApp();
     main.render();
   }
+
+
+  export async function loadImages() {
+    const imageContainer = document.getElementById('image-container');
+    let imgLen = 24
+    let images = []
+        for (let i=1;i<=imgLen;i++) {
+            images.push('menuImages/' + i + '.jpg')
+        }
+    images.forEach(imageSrc => {
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('image-wrapper');
+      wrapper.classList.add('mm');
+
+      const image = document.createElement('img');
+      image.src = imageSrc;
+      image.classList.add('mm')
+      image.classList.add('chosen-image')
+
+      image.alt = 'Image description'; // Add a meaningful description
+  
+      wrapper.appendChild(image);
+      imageContainer.appendChild(wrapper);
+    });
+  }
+  
+  export async function getImages() {
+        console.log(retArr)
+    }
+
+  
+//   async function getImages() {
+//     const response = await fetch('/path/to/your/server-side/script');
+//     const images = await response.json();
+//     return images.map(image => `static/menuImages/${image}`);
+//   }
+  

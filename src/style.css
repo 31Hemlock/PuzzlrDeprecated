@@ -1,13 +1,11 @@
-*
-{
-    margin: 0;
-    padding: 0;
-}
+
 
 html,
 body
 {
     overflow: hidden;
+    margin:0px;
+    padding:0px;
 }
 #Application {
   position:relative;
@@ -24,7 +22,7 @@ body
 #escmenu {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 3;
     left: 3%;
     top: 3%;
     /* width: 30%;
@@ -67,7 +65,17 @@ body
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     border-radius: 5px;
     padding: 20px;
+    overflow:scroll;
+    height:600px;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  
 }
+
+.startmenu::-webkit-scrollbar {
+  display: none;
+}
+
 
 .startmenu-content {
     display: flex;
@@ -78,6 +86,7 @@ body
 h2 {
     color: #545e56;
     margin: 0;
+    margin-top:4%;
 }
 
 h4 {
@@ -150,4 +159,150 @@ form {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+#image-container {
+  display:inline-block;
+  padding:2%;
+}
+
+.image-wrapper {
+  display: inline-block;
+  width: 200px; /* Set the desired width */
+  height: 100px; /* Set the desired height */
+  overflow: hidden;
+  margin: 5px; /* Add space between images */
+  padding: 3%;
+  position: relative;
+  border-radius: 10px; /* Add rounded corners */
+  box-shadow: 4px 2px 2px #463f3a; /* Add red outline effect */
+}
+
+.image-wrapper img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 150%;
+}
+.image-wrapper:hover {
+  transform: translate(0, -7%);
+  cursor: pointer;
+  box-shadow: 5px 7px 2px #463f3a; /* Add red outline effect */
+}
+.image-wrapper {
+  transition: transform 0.3s cubic-bezier(0.01, 0.02, 0.03, 0.8), box-shadow 0.3s cubic-bezier(0.01, 0.02, 0.03, 0.8);
+
+}
+
+.image-preview-container {
+  z-index: 0;
+  left: 0%;
+  top: 0%;
+  position: absolute;
+  border: 2px solid #555;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  background-color: #fff;
+  max-height: 0px;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.1, 0.2, 0.3, 0.99), padding 0.2s cubic-bezier(0.1, 0.2, 0.3, 0.99);
+
+}
+
+.image-preview-container:before {
+  content: "Hover to see preview image";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #463f3a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 1;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out, display 0s 0.3s;
+
+}
+
+.image-preview-container:hover {
+  max-height: 540px; /* Add 20px to compensate for the padding */
+  padding: 20px;
+}
+
+.image-preview-container:hover:before {
+  opacity: 0;
+
+}
+
+#imagePreview {
+  max-width: 500px;
+  max-height: 500px;
+  display: block;
+  margin: 0 auto;
+  position: relative;
+  z-index: 0;
+  background-color: #f4f2ee;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+
+
+}
+
+
+.pin-button {
+  /* position: absolute;
+  top: 10px;
+  right: 10px; */
+  margin-left:0px;
+  z-index: 2;
+  color: #fff;
+  border: none;
+  margin-top:8px;
+  margin-bottom:0px;
+  font-size: 14px;
+  width:100%;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pin-button:focus {
+  outline: none;
+}
+
+.pin-button.depressed {
+  top: 12px;
+  box-shadow: none;
+}
+
+.image-preview-container:hover #imagePreview,
+.image-preview-container.pinned #imagePreview {
+  background-color: #463f3a; /* Set the background color when hovered or pinned */
+  opacity: 1;
+}
+
+.image-preview-container.pinned {
+  max-height: 540px;
+}
+
+.image-preview-container.pinned:before {
+  opacity: 0;
+  display: none;
+}
+.image-preview-container:hover:before {
+  opacity: 0;
+  display:none;
+}
+
+.no-interaction {
+  pointer-events: none;
 }
