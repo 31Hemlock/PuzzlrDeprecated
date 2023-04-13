@@ -11,15 +11,17 @@ export class MainMenu {
     }
 
     init() {
+        this.modal.classList.add('open')
     }
 
     open() {
-        this.modal.style.display = 'block'
         this.appearanceState = 1
+        this.modal.classList.add('open');
+
     }
     close() {
-        this.modal.style.display = 'none'
         this.appearanceState = 0
+        this.modal.classList.remove('open');
     }
 
 

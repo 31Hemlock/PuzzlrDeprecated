@@ -23,10 +23,24 @@ export class Piece extends THREE.Mesh {
     init() {
       this.setNormalizedInitVerts(this.initVerts).then(() => {
         this.setCurVerts()
+        this.setDims()
         // .then(() => {
         //   console.log('Current verts set!')
         // })
       })
+    }
+
+
+    async setDims() {
+      const meshBoundingBox = new THREE.Box3().setFromObject(this);
+
+      // Calculate the width, height, and depth
+      const size = new THREE.Vector3();
+      meshBoundingBox.getSize(size);
+      this.width = size.x;
+      this.height = size.y;
+      this.depth = size.z;
+
     }
 
     dispose() {
@@ -87,10 +101,11 @@ export class Piece extends THREE.Mesh {
   
   
 
-    moved() {   
+    moved(formGroup = true) {   
       this.setCurVerts().then(() => {
-        // this.markVerts(this.curVerts)
-        this.checkFormGroup()
+        if (formGroup) {
+          this.checkFormGroup()
+        }
       })
     }
 

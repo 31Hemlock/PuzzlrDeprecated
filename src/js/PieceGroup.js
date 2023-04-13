@@ -16,12 +16,84 @@ export class PieceGroup extends THREE.Group {
     }
 
     async init() {
+        await this.playGroupSound()
         await this.createVerts()
         await this.createCurVerts()
         await this.decomposeAndRecompose()
         await this.setNormalizedInitVerts(this.initVerts)
         await this.setStartingPosition()
+        await this.setDims()
+            }
+
+
+    async setDims() {
+      const mergedBoundingBox = new THREE.Box3();
+
+      // Loop through each mesh in the group
+      this.traverse((object) => {
+          // Create a bounding box for the current mesh
+          const meshBoundingBox = new THREE.Box3().setFromObject(object);
+          // Merge the current mesh's bounding box with the main bounding box
+          mergedBoundingBox.union(meshBoundingBox);
+
+      });
+
+      // Calculate the width, height, and depth
+      const size = new THREE.Vector3();
+      mergedBoundingBox.getSize(size);
+      this.width = size.x;
+      this.height = size.y;
+      this.depth = size.z;
+
     }
+
+    playGroupSound() {
+      // get total number of puzzle pieces, get number of pieces passed as args to this function, use ratio to play sound
+      const main = new PuzzleApp()
+      console.log(this.pieces)
+      let currentPieces = this.countPieces(this.pieces)
+      const pieceRatio = currentPieces / main.totalPieces
+      console.log(pieceRatio)
+      switch(true) {
+        case pieceRatio < 0.14:
+          main.playSound(1)
+          break;
+        case pieceRatio < 0.28:
+          main.playSound(2)
+          break;
+        case pieceRatio < 0.42:
+          main.playSound(3)
+          break;
+        case pieceRatio < 0.56:
+          main.playSound(4)
+          break;
+        case pieceRatio < 0.7:
+          main.playSound(5)
+          break;
+        case pieceRatio < 1:
+          main.playSound(6)
+          break;
+        case pieceRatio == 1:
+          main.playSound(7)
+          break;
+  
+            
+      }
+
+    }
+
+    countPieces(...pieces) {
+      let count = 0;
+      pieces.flat().forEach((piece) => {
+        if (piece instanceof Piece) {
+          count++;
+        } else if (piece instanceof PieceGroup) {
+          count += this.countPieces(...piece.children);
+        }
+      });
+      return count;
+    }
+    
 
     dispose() {
       // Dispose of each piece in the group
@@ -200,14 +272,7 @@ export class PieceGroup extends THREE.Group {
         main.render()
       }
   
-    printExists() {
-        console.log(this)
-        console.log(this.newProp)
-    }
-
     moved() {
-        console.log(this)
-        console.log(this.children)
         this.setCurVerts().then(() => {
             let main = new PuzzleApp()
             console.log(main.scene)

@@ -23,6 +23,8 @@ import  {
 } from './ImagePreview'
 import * as utils from './utils.js'
 
+import * as TWEEN from '@tweenjs/tween.js';
+
 
 
 
@@ -46,6 +48,7 @@ export class PuzzleApp {
 
 
         this.startTime = performance.now()
+        this.sounds = []
 
         // set some initial values
         this.scene.background = new THREE.Color(0xf0f0f0)
@@ -92,13 +95,6 @@ export class PuzzleApp {
         this.renderPass = new RenderPass( this.scene, this.camera )
         this.composer.addPass( this.renderPass )
 
-        this.outlinePass = new OutlinePass ( new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera)
-        this.outlinePass.visibleEdgeColor.set(0xFFD700);
-        this.outlinePass.edgeThickness = 1;
-        this.outlinePass.edgeStrength = 2;
-        this.outlinePass.edgeGlow = 0.2;
-        this.outlinePass.enabled = true;
-        this.composer.addPass(this.outlinePass)
         this.animate()
 
         // Middle mouse handling
@@ -133,9 +129,23 @@ export class PuzzleApp {
             this.imagePreview = new ImagePreview(image)
         }
 
+        console.log('outsidecolor')
         let texturePrepper = new TexturePrep(image)
         let texture = await texturePrepper.init()
-        console.log(texture)
+        let avgColor = utils.getAverageColor(texture)
+        console.log(avgColor)
+        let resultColor = utils.complementaryThreeColor(avgColor);
+        console.log(resultColor)
+        this.outlinePass = new OutlinePass ( new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera)
+        console.log(resultColor)
+        this.outlinePass.visibleEdgeColor.set(resultColor);
+        this.outlinePass.edgeThickness = 2;
+        this.outlinePass.edgeStrength = 2;
+        this.outlinePass.edgeGlow = 3;
+        this.outlinePass.pulsePeriod = 5;
+        this.outlinePass.enabled = true;
+        this.composer.addPass(this.outlinePass)
+
         let avg_size = (texture.image.width + texture.image.height) / 2
         let piece_size = avg_size / 100
 
@@ -151,12 +161,16 @@ export class PuzzleApp {
         this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
         console.log(this.camera.position.z)
         const puzzlePieces = this.puzzle.createPieces()
+        this.totalPieces = puzzlePieces.length
         puzzlePieces.forEach(piece => {
             this.scene.add(piece);
         })
         this.initDragControls()
         this.render()
-
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.sounds = [];
+        this.initAudio();
+    
 
         
         // const svgData = fetch('./geography/wikirealsvg.svg').then(response => response.text()).then(data => {
@@ -178,6 +192,25 @@ export class PuzzleApp {
     
     }
 
+    async audioProcessor(audioFilePath) {
+        const response = await fetch(audioFilePath);
+        const audioBuffer = await response.arrayBuffer();
+        const decodedAudioBuffer = await this.audioContext.decodeAudioData(audioBuffer);
+        return decodedAudioBuffer;
+      }
+    
+
+    async initAudio() {
+        this.sounds.push(await this.audioProcessor('sounds/knockwood2.mp3'));
+        this.sounds.push(await this.audioProcessor('sounds/oneNote.mp3'))
+        this.sounds.push(await this.audioProcessor('sounds/twoNote.mp3'))       
+        this.sounds.push(await this.audioProcessor('sounds/threeNote.mp3'))        
+        this.sounds.push(await this.audioProcessor('sounds/fourNote.mp3'))      
+        this.sounds.push(await this.audioProcessor('sounds/fiveNote.mp3'))       
+        this.sounds.push(await this.audioProcessor('sounds/sixNote.mp3'))      
+        this.sounds.push(await this.audioProcessor('sounds/sevenNote.mp3'))
+        }
+    
     makeNewPuzzle(image) {
         this.clearBoard()
         this.init(image)
@@ -264,6 +297,8 @@ export class PuzzleApp {
 
     animate() {
         requestAnimationFrame(() => this.animate());
+
+        TWEEN.update();
     
         // Calculate the time since the last frame and update elapsedTime
         const currentTime = performance.now();
@@ -354,6 +389,79 @@ export class PuzzleApp {
       
         }
       }
+
+      sortPieceGroupsByChildrenCount(pieceGroups) {
+        return pieceGroups.sort((a, b) => a.children.length - b.children.length);
+      }
+
+      getNextPosition(currentX, currentY, currentRowMaxHeight, pieceGroup, distance) {
+        const nextX = currentX + pieceGroup.width + distance;
+        if (nextX > window.innerWidth) {
+          return {
+            x: 0,
+            y: currentY + currentRowMaxHeight + distance,
+            rowMaxHeight: pieceGroup.height,
+          };
+        }
+        return {
+          x: nextX,
+          y: currentY,
+          rowMaxHeight: Math.max(currentRowMaxHeight, pieceGroup.height),
+        };
+      }
+      
+      
+      calculatePosition(index, distance, width, height) {
+        const x = (index % width) * distance;
+        const y = Math.floor(index / width) * distance;
+        return new THREE.Vector3(x, y, 0);
+      }
+
+
+      positionObjects(objects, distance = 100, yOffset = 0) {
+        let newCameraPos = new THREE.Vector3(this.puzzle.texture.image.width,this.puzzle.texture.image.height,this.puzzle.texture.image.width + this.puzzle.texture.image.height)
+        utils.moveObjectToPosition(this.camera, newCameraPos)
+        let currentX = 0;
+        let currentY = yOffset;
+        let currentRowMaxHeight = 0;
+        const availableWidth = window.innerWidth;
+    
+        objects.forEach((object) => {
+          if (currentX + object.width > availableWidth) {
+            currentX = 0;
+            currentY += currentRowMaxHeight + distance;
+            currentRowMaxHeight = 0;
+          }
+    
+          const targetPosition = new THREE.Vector3(currentX, currentY, 0);
+          utils.moveObjectToPosition(object, targetPosition);
+    
+          currentX += object.width + distance;
+          currentRowMaxHeight = Math.max(currentRowMaxHeight, object.height);
+        });
+    
+        return currentY + currentRowMaxHeight;
+      }
+
+    
+      positionPiecesAndPieceGroups(distance = 100) {
+        let pieces = []
+        let pieceGroup = []
+        for (let object of this.scene.children) {
+            if (object instanceof Piece) {
+                pieces.push(object)
+            } else if (object instanceof PieceGroup) {
+                pieceGroup.push(object)
+            }
+
+        }
+        const maxYofPieceGroups = this.positionObjects(pieceGroup, distance);
+        const yOffsetForPieces = maxYofPieceGroups + distance;
+        this.positionObjects(pieces, distance, yOffsetForPieces);
+        
+      }
+    
+    
       
 
     mapElapsedTime(elapsedTime) {
@@ -377,13 +485,23 @@ export class PuzzleApp {
         // return mappedValue;
         return 10;
     }
-      
+
+    playSound(soundIndex) {
+        const audioBuffer = this.sounds[soundIndex]
+        const source = this.audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(this.audioContext.destination);
+        source.start(0);
+      }
+          
 
     #onDragEnd(event) {
         this.outlinePass.selectedObjects = []
         this.dragActiveObj.position.z = 0
         this.dragActiveObj = null
         this.imagePreview.setInteractive()
+        this.playSound(0);
+
         event.object.moved()
         // for (let i = this.scene.children.length - 1; i >= 0; i--) {
         //     const child = this.scene.children[i];
@@ -431,11 +549,16 @@ export class PuzzleApp {
         if (event.keyCode == 27) {
             if (this.mainMenu.appearance() == 1) {
                 this.mainMenu.close()
+                this.mainMenu.modal.classList.remove("open");
             } else {
                 this.mainMenu.open()
             }
             //this.html.getelementbyid.css = 'block' on and off
 
+        }
+
+        if (event.keyCode == 48) {
+            this.positionPiecesAndPieceGroups()
         }
     }
 
@@ -472,7 +595,23 @@ export class PuzzleApp {
         this.lastMouseY = event.clientY;
         this.render()
         }
-    }      
+        if (this.dragActiveObj && this.imagePreview.imgContainer.classList.contains('pinned')) {
+            const rect = this.imagePreview.imgContainer.getBoundingClientRect();
+            const isMouseUnderDiv = event.clientX >= rect.left &&
+                                    event.clientX <= rect.right &&
+                                    event.clientY >= rect.top &&
+                                    event.clientY <= rect.bottom;
+            if (isMouseUnderDiv) {
+                this.imagePreview.imgContainer.style.opacity = '0.3';
+            } else {
+                this.imagePreview.imgContainer.style.opacity = '1';
+            }
+          } else {
+            this.imagePreview.imgContainer.style.opacity = '1';
+          }
+    
+        }
+          
     #onMouseUp(event) {
         console.log(event.target)
         if (event.target.classList.contains("chosen-image")) {

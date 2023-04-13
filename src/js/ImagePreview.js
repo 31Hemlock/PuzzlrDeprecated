@@ -5,11 +5,9 @@ export class ImagePreview {
         this.imgElement = document.getElementById('imagePreview')
         this.pinButton = document.getElementById('pinButton')
         this.init()
-        console.log(this)
     }
 
     init() {
-        console.log(this.pinButton)
         this.setSource(this.imgReference)
         this.pinButton.addEventListener("click", () => {
           this.imgContainer.classList.toggle("pinned");

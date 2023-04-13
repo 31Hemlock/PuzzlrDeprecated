@@ -1,5 +1,8 @@
 import {rotationValues} from './constants'
 import {PuzzleApp} from './PuzzleApp'
+import * as THREE from 'three'
+import * as TWEEN from '@tweenjs/tween.js';
+
 
 export function getRandBetween(min, max) {
     return Math.random() * (max - min) + min;
@@ -116,6 +119,86 @@ export function rotateAny(obj, direction) {
         console.log(retArr)
     }
 
+
+    export function getAverageColor(texture) {
+        // Create a canvas to draw the texture
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        // Set canvas dimensions to match texture
+        canvas.width = texture.image.width;
+        canvas.height = texture.image.height;
+        
+        // Draw the texture on the canvas
+        context.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+        
+        // Get the image data
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        
+        // Initialize color accumulators
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        
+        // Iterate through the image data and sum up the color components
+        for (let i = 0; i < imageData.length; i += 4) {
+            r += imageData[i];
+            g += imageData[i + 1];
+            b += imageData[i + 2];
+        }
+        
+        // Calculate the average color
+        const numPixels = canvas.width * canvas.height;
+        r = Math.floor(r / numPixels);
+        g = Math.floor(g / numPixels);
+        b = Math.floor(b / numPixels);
+        console.log(r, g, b)
+        // r = 255 - r
+        // g = 255 - g
+        // b = 255 - b
+        // console.log(r, g, b)
+
+        // Return the average color as a Three.js Color object
+        let avgColor = [r, g, b]
+        return avgColor;
+        }
+
+        export function complementaryThreeColor(rgb) {
+            // Convert RGB to HSL
+            let r = rgb[0] / 255;
+            let g = rgb[1] / 255;
+            let b = rgb[2] / 255;
+            let max = Math.max(r, g, b);
+            let min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+    
+            if (max === min) {
+                h = s = 0;
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    
+                switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+                }
+    
+                h /= 6;
+            }
+    
+            // Set saturation and lightness to create a pastel version
+            s = 0.5;
+            l = 0.4;
+    
+            // Create a THREE.Color object with the resulting HSL values
+            let threeColor = new THREE.Color();
+            threeColor.setHSL(h, s, l);
+            return threeColor;
+            }
+    
+
+
   
 //   async function getImages() {
 //     const response = await fetch('/path/to/your/server-side/script');
@@ -123,3 +206,21 @@ export function rotateAny(obj, direction) {
 //     return images.map(image => `static/menuImages/${image}`);
 //   }
   
+export function moveObjectToPosition(object, targetPosition, duration = 1000) {
+    const startPosition = new THREE.Vector3().copy(object.position);
+    const tween = new TWEEN.Tween(startPosition)
+      .to(targetPosition, duration)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        object.position.copy(startPosition);
+      })
+      .onComplete(() => {
+        if (object.moved) {
+            object.moved(false);
+        }
+      })
+  
+      .start();
+
+    
+  }

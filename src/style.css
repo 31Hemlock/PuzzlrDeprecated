@@ -69,7 +69,20 @@ body
     height:600px;
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
-  
+
+    /* Transition */
+    opacity: 0;
+    transform: translate(-50%, -40%);
+    transition: transform 0.5s, opacity 0.5s;
+    pointer-events: none;
+
+
+}
+.startmenu.open {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  pointer-events: auto;
+
 }
 
 .startmenu::-webkit-scrollbar {
@@ -196,6 +209,10 @@ form {
 }
 
 .image-preview-container {
+  -webkit-user-select: none; /* Chrome, Safari, and Opera */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer and Edge */
+  user-select: none; /* Standard syntax */
   z-index: 0;
   left: 0%;
   top: 0%;
