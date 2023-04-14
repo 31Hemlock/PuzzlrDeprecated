@@ -39,6 +39,7 @@ body
   }
   
   .close {
+    z-index:3;
     color: #aaa;
     float: right;
     font-size: 28px;
@@ -54,6 +55,7 @@ body
   
 
   .startmenu {
+    z-index:2;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -91,10 +93,14 @@ body
 
 
 .startmenu-content {
-    display: flex;
+    pointer-events: none;
+    position:absolute;
+    display:flex;
+    opacity: 0;
     flex-direction: column;
     align-items: center;
-}
+    transition: opacity 0.5s;
+  }
 
 h2 {
     color: #545e56;
@@ -252,6 +258,7 @@ form {
 .image-preview-container:hover {
   max-height: 540px; /* Add 20px to compensate for the padding */
   padding: 20px;
+  z-index:1;
 }
 
 .image-preview-container:hover:before {
@@ -322,4 +329,79 @@ form {
 
 .no-interaction {
   pointer-events: none;
+}
+
+
+
+.settings-content {
+  width:93%;
+}
+
+.display {
+  pointer-events:inherit;
+  display:flex;
+  opacity: 1;
+}
+
+.settings-button {
+  z-index:3;
+  width:30px;
+  top:3%;
+  left:3%;
+  position:absolute;
+
+}
+
+.settings-button:hover {
+  cursor: pointer;
+
+}
+
+select {
+  margin:15px;
+
+  padding: 15px;
+  border-radius: 5px;
+  border: 2px solid #ccc;
+  background-color: #463f3a;
+  color: white;
+  font-size: 16px;
+  margin-bottom: 16px;
+  width: 90%;
+  text-align:center;
+}
+select.mm option:hover {
+  background-color: red;
+}
+
+
+/* Style for the checkbox inputs */
+input[type=checkbox] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid #ccc;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+}
+
+/* Style for the checkbox inputs when checked */
+input[type=checkbox]:checked::before {
+  color: #463f3a;
+  content: "\2713";
+  font-size: 21px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+.shadowrealm {
+  display:none;
 }

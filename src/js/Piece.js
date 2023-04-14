@@ -16,7 +16,7 @@ export class Piece extends THREE.Mesh {
       this.normalizedInitVerts = []
       this.previousRotation = this.rotation.z
       this.num = num
-      this.connectionDistance = [25, 25]
+      this.connectionDistance = [40, 40]
 
     }
 
@@ -208,7 +208,7 @@ export class Piece extends THREE.Mesh {
               let matchingOtherVertex = otherPiece.initVerts.find(({ x: otherX, y: otherY }) => vertex.x === otherX && vertex.y === otherY);
               return matchingOtherVertex !== undefined ? vertex : undefined;
             });
-            if (matchingVertex) {    
+            if (matchingVertex) { 
               let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => x === matchingVertex.x && y === matchingVertex.y);
               let offset = new THREE.Vector3().subVectors(
                 this.curVerts[this.initVerts.indexOf(matchingVertex)],

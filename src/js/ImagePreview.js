@@ -47,5 +47,11 @@ export class ImagePreview {
         this.setSource();
       }
     
-    
+    hide() {
+      this.imgContainer.classList.add("shadowrealm")
+    }
+    show() {
+      this.imgContainer.classList.remove("shadowrealm")
+    }
+
 }

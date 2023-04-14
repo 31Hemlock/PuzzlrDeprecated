@@ -15,8 +15,9 @@
         <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
         
         <div id="mainmenu" class="startmenu mm">
-            <div class="startmenu-content mm">
-                <span id="mm-close" class="close">&times;</span>
+            <span id="mm-close" class="close">&times;</span>
+            <img src="/static/images/settings.svg" class="settings-button settings-main mm" id="settings-main"alt="Settings Icon" />
+            <div class="startmenu-content display mm" id="startmenu-content">
                 <h2 class="mm">Welcome to Puzzlr!</h2>
                 <h4 class="mm">Choose an image to get started:</h4>
                 <input type="file" id="mm-file-input" class="mm">
@@ -30,6 +31,24 @@
                 <h4 class="mm">Or, choose one of our images!</h4>
                 <div class="mm" id="image-container"></div>
             </div>
+
+            <div class="startmenu-content settings-content mm" id="settings-content">
+                <h2 class="mm">Settings</h2>
+                <h4 class="mm" for="pieces-select">Number of Pieces:</h4>
+                <select class="mm" id="pieces-select">
+                    <option class="mm" value="easy">A few</option>
+                    <option selected class="mm" value="medium">A good amount</option>
+                    <option class="mm" value="hard">Lots.</option>
+                    <option class="mm" value="hard">AAAA!!! TOO MANY!!</option>
+
+                </select>
+        
+                <h4 class="mm" for="preview-checkbox">Display Preview Image?</h4>
+                <input class="mm" type="checkbox" id="preview-checkbox" name="preview-checkbox" checked>
+        
+                <h4 class="mm" for="sound-checkbox">Sound?</h4>
+                <input class="mm" type="checkbox" id="sound-checkbox" name="sound-checkbox" checked>
+                    </div>
         </div>
             <!-- <div id="escmenu" class="escmenu">
             <div class="escmenu-content escmenu">

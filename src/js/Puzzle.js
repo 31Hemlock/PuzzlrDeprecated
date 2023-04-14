@@ -74,7 +74,7 @@ export class Puzzle{
           // }
 
           //uncomment for code to work
-          piece.position.set(getRandBetween(0 - (this.texture.image.width/2), this.texture.image.width/2), getRandBetween(0 - this.texture.image.height/2, this.texture.image.height / 2), 0)
+          piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
           piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
           piece.geometry.center()
 
@@ -102,8 +102,11 @@ export class Puzzle{
           for (let i in shape.curves) {
               let line = shape.curves[i]
               const objKeys = Object.keys(shape.curves[i])
-                  .filter(key => key.startsWith('v'))
-                  .map(key => ({ x: line[key].x, y: line[key].y }));
+              .filter(key => key.startsWith('v'))
+              .map(key => ({ // Limit to 4 sig figs
+                  x: parseFloat(parseFloat(line[key].x).toFixed(4)),
+                  y: parseFloat(parseFloat(line[key].y).toFixed(4))
+              }));
               exitArray.push(objKeys.flat())
           }
           exitArray = exitArray.flat()

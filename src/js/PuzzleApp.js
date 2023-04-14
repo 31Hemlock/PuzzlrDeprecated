@@ -21,6 +21,11 @@ import {
 import  {
     ImagePreview
 } from './ImagePreview'
+
+import {
+    Backdrop
+} from './Backdrop'
+
 import * as utils from './utils.js'
 
 import * as TWEEN from '@tweenjs/tween.js';
@@ -38,11 +43,13 @@ export class PuzzleApp {
         instance = this
         this.container = container;
         this.scene = new THREE.Scene()
+
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000)
         this.ambientLight = new THREE.AmbientLight(0x505050)
         this.spotLight = new THREE.SpotLight(0xffffff, 1.5);
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true
+            antialias: true,
+            alpha: true
         });
         this.mainMenu = new MainMenu()
 
@@ -52,6 +59,8 @@ export class PuzzleApp {
 
         // set some initial values
         this.scene.background = new THREE.Color(0xf0f0f0)
+        this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
+
         this.camera.position.set(0, 0, 1000)
 
         this.spotLight.position.set(0, 0, 50)
@@ -66,7 +75,6 @@ export class PuzzleApp {
         this.renderer.shadowMap.enabled = true
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
-        this.scene.background = new THREE.Color(0xf0f0f0)
         // add everything to the scene
         this.scene.add(this.camera);
         this.scene.add(this.ambientLight)
@@ -82,6 +90,8 @@ export class PuzzleApp {
         window.addEventListener('wheel', this.#onWheel.bind(this))
         const urlForm = document.getElementById("url-form");
         urlForm.addEventListener('submit', this.#onFormSubmit.bind(this))
+        this.backdrop = new Backdrop(this.scene);
+
 
         //Postprocessing
         // When adding a composer to the scene, the following bug occurs:
@@ -102,7 +112,9 @@ export class PuzzleApp {
         this.lastMouseX = 0
         this.lastMouseY = 0
         this.deltaCameraZ = 0
-        
+
+        this.pieceAmounts = [10, 25, 50, 100]
+
         this.init()
 
         this.mainMenu.input.addEventListener('change', (event) => {
@@ -116,10 +128,38 @@ export class PuzzleApp {
             reader.readAsDataURL(file);
 
         })
+        this.scene.traverse((object) => {
+            object.layers.set(0);
+          });
 
+        this.mainMenu.settingSelectedCount.addEventListener('change', () => {
+            this.mainMenu.settingNumPieces = this.mainMenu.settingSelectedCount.selectedIndex
+            console.log('change')
+
+        })
+
+        this.mainMenu.settingPreviewImage.addEventListener("change",  () => {
+            console.log(this.mainMenu)
+            this.onPreviewCheckboxChange(this.mainMenu.settingPreviewImage.checked);
+          });
+
+          
+          
         utils.loadImages()
 
         }
+
+
+        
+
+    onPreviewCheckboxChange(isChecked) {
+        if (isChecked) {
+            this.imagePreview.show()
+        } else {
+            this.imagePreview.hide()
+        }
+
+    }
 
     async init(image = 'images/7Cw2iDV.jpeg') {
 
@@ -148,8 +188,9 @@ export class PuzzleApp {
 
         let avg_size = (texture.image.width + texture.image.height) / 2
         let piece_size = avg_size / 100
-
-        let total_pieces = Math.min(Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size), 20)
+        console.log(this.mainMenu.settingNumPieces)
+        console.log(this.pieceAmounts[this.mainMenu.settingNumPieces])
+        let total_pieces = Math.min(Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size), this.pieceAmounts[this.mainMenu.settingNumPieces])
         let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)))
         let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)))
         console.log(wideReps, highReps)
@@ -299,6 +340,10 @@ export class PuzzleApp {
         requestAnimationFrame(() => this.animate());
 
         TWEEN.update();
+
+        this.backdrop.update()
+
+        
     
         // Calculate the time since the last frame and update elapsedTime
         const currentTime = performance.now();
@@ -307,12 +352,9 @@ export class PuzzleApp {
     
         // Call the tick function with deltaTime as an argument
         this.tick(deltaTime);
-    
 
-        // Render the scene
-        this.render()
-        // Render the postprocessing
-        this.composer.render();
+        // Render
+        this.composer.render()
 
       }
         
@@ -358,7 +400,7 @@ export class PuzzleApp {
         this.camera.updateProjectionMatrix();
     
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.render(this.scene, this.camera)
+        this.render()
         // this.puzzle.texture.needsUpdate = true;
 
 
@@ -486,12 +528,14 @@ export class PuzzleApp {
         return 10;
     }
 
-    playSound(soundIndex) {
-        const audioBuffer = this.sounds[soundIndex]
-        const source = this.audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(this.audioContext.destination);
-        source.start(0);
+    playSound(soundIndex, settingEnabled = true) {
+        if (settingEnabled) {
+            const audioBuffer = this.sounds[soundIndex]
+            const source = this.audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(this.audioContext.destination);
+            source.start(0);    
+        }
       }
           
 
@@ -500,7 +544,7 @@ export class PuzzleApp {
         this.dragActiveObj.position.z = 0
         this.dragActiveObj = null
         this.imagePreview.setInteractive()
-        this.playSound(0);
+        this.playSound(0, this.mainMenu.settingSound.checked);
 
         event.object.moved()
         // for (let i = this.scene.children.length - 1; i >= 0; i--) {
@@ -583,6 +627,10 @@ export class PuzzleApp {
             this.lastMouseY = event.clientY;
       
         } 
+
+        if (event.target.classList.contains("settings-main")) {
+            this.mainMenu.toggleSettings();
+        }
     }
     #onMouseMove(event) {
         if (this.isMiddleButtonDown) {

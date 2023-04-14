@@ -6,7 +6,7 @@ import {
 
 
 export class VertMarker extends THREE.Mesh{
-    constructor(vertPosition, color = 0x8ffff, size=3) {
+    constructor(vertPosition, color = 0x8ffff, size=7) {
 
         let geometry = new THREE.SphereGeometry(size,size,size)
         let material = new THREE.MeshBasicMaterial({

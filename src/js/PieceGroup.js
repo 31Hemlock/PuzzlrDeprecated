@@ -12,7 +12,7 @@ export class PieceGroup extends THREE.Group {
         super()
         this.pieces = pieces
         this.normalizedInitVerts = []
-        this.connectionDistance = [25, 25]
+        this.connectionDistance = [40, 40]
     }
 
     async init() {
@@ -54,30 +54,31 @@ export class PieceGroup extends THREE.Group {
       let currentPieces = this.countPieces(this.pieces)
       const pieceRatio = currentPieces / main.totalPieces
       console.log(pieceRatio)
-      switch(true) {
-        case pieceRatio < 0.14:
-          main.playSound(1)
-          break;
-        case pieceRatio < 0.28:
-          main.playSound(2)
-          break;
-        case pieceRatio < 0.42:
-          main.playSound(3)
-          break;
-        case pieceRatio < 0.56:
-          main.playSound(4)
-          break;
-        case pieceRatio < 0.7:
-          main.playSound(5)
-          break;
-        case pieceRatio < 1:
-          main.playSound(6)
-          break;
-        case pieceRatio == 1:
-          main.playSound(7)
-          break;
+      if (main.mainMenu.settingSound.checked) {
+        switch(true) {
+          case pieceRatio < 0.14:
+            main.playSound(1)
+            break;
+          case pieceRatio < 0.28:
+            main.playSound(2)
+            break;
+          case pieceRatio < 0.42:
+            main.playSound(3)
+            break;
+          case pieceRatio < 0.56:
+            main.playSound(4)
+            break;
+          case pieceRatio < 0.7:
+            main.playSound(5)
+            break;
+          case pieceRatio < 1:
+            main.playSound(6)
+            break;
+          case pieceRatio == 1:
+            main.playSound(7)
+            break; 
+        }
   
-            
       }
 
     }
@@ -321,11 +322,13 @@ export class PieceGroup extends THREE.Group {
                 let matchingOtherVertex = otherPiece.initVerts.find(({ x: otherX, y: otherY }) => vertex.x === otherX && vertex.y === otherY);
                 return matchingOtherVertex !== undefined ? vertex : undefined;
               });
-              if (matchingVertex) {    
-                let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => x === matchingVertex.x && y === matchingVertex.y);
+              if (matchingVertex) {
+                console.log(matchingVertex)
+                const TOLERANCE = 0.01; // adjust this as needed
+                let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => Math.abs(x - matchingVertex.x) < TOLERANCE && Math.abs(y - matchingVertex.y) < TOLERANCE);
                 let offset = new THREE.Vector3().subVectors(
-                  this.curVerts[this.initVerts.indexOf(matchingVertex)],
-                  otherPiece.curVerts[otherPieceMatchingVertexIndex]
+                this.curVerts[this.initVerts.indexOf(matchingVertex)],
+                otherPiece.curVerts[otherPieceMatchingVertexIndex]
                 );
                   if (Math.abs(offset.x) < this.connectionDistance[0] && Math.abs(offset.y) < this.connectionDistance[1]) {
                     console.log('New group is gonna get formed now.')
