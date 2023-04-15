@@ -223,17 +223,18 @@ export class PuzzleApp {
 
 
         //debug
-        let svgString = "/images/adobe_onlyBlack.svg";
+        // change this function entirely to not repeat code, use proper await yadda
+        let svgString = "/images/large_adobe.svg";
         svgFile = this.fetchSVGContent(svgString);
         (async () => {
             const svgContent = await this.fetchSVGContent(svgString);
             if (svgContent) {
-              const tarWidth = 200;
-              const tarHeight = 200;
+              const tarWidth = 5;
+              const tarHeight = 5;
               const scaler = new svgScaler(tarWidth, tarHeight, svgContent);
               await scaler.init();
               const svgData = scaler.scaledSVG();
-          
+                console.log(svgData)
               this.puzzle = new Puzzle(svgData, texture)
                       // this.scene.add(this.puzzle.getThumbMesh())
         this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)

@@ -74,9 +74,9 @@ export class Puzzle{
           // }
 
           //uncomment for code to work
-          piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
-          piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
-          piece.geometry.center()
+          // piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
+          // piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
+          // piece.geometry.center()
 
           piece.init()
 
