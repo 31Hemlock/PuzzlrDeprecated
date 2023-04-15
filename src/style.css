@@ -9,6 +9,12 @@ body
 }
 #Application {
   position:relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+
 }
 
 .webgl
@@ -282,6 +288,10 @@ form {
 }
 
 
+#imagePreviewContainer {
+  z-index:0;
+}
+
 .pin-button {
   /* position: absolute;
   top: 10px;
@@ -404,4 +414,20 @@ input[type=checkbox]:checked::before {
 
 .shadowrealm {
   display:none;
+}
+
+#background {
+  height:1440px;
+  width:2560px;
+  z-index:-5;
+}
+
+#application {
+  height: 100%;
+  width:100%;
+}
+
+#main {
+  position:absolute;
+  z-index:0;
 }

@@ -21,14 +21,19 @@ import {
 import  {
     ImagePreview
 } from './ImagePreview'
+import svgScaler from './svgScaler.js';
 
-import {
-    Backdrop
-} from './Backdrop'
+// import {
+//     Backdrop
+// } from './Backdrop'
 
 import * as utils from './utils.js'
 
 import * as TWEEN from '@tweenjs/tween.js';
+
+
+import clouds from 'vanta/dist/vanta.clouds.min'
+
 
 
 
@@ -41,6 +46,23 @@ export class PuzzleApp {
             return instance
         }
         instance = this
+        // clouds({
+        //     el: '#background',
+        //     THREE: THREE,
+        //     backgroundColor: 0x000000,
+        //     color: 0x008080,
+        //     neighborColor: 0x00ffff,
+        //     baseColor: 0x000000,
+        //   });
+                    //     // midtoneColor: 0xf7ff80,
+        //     // lowlightColor: 0xd7b44e,
+        //     lowlightColor: 0x4ec6d7,
+
+        //     baseColor: 0xffffff,
+        //     blurFactor: 0.36,
+        //     speed: 0.30,
+        //     zoom: 0.30
+        //   })                  
         this.container = container;
         this.scene = new THREE.Scene()
 
@@ -57,9 +79,10 @@ export class PuzzleApp {
         this.startTime = performance.now()
         this.sounds = []
 
+
         // set some initial values
         this.scene.background = new THREE.Color(0xf0f0f0)
-        this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
+        // this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
 
         this.camera.position.set(0, 0, 1000)
 
@@ -90,7 +113,7 @@ export class PuzzleApp {
         window.addEventListener('wheel', this.#onWheel.bind(this))
         const urlForm = document.getElementById("url-form");
         urlForm.addEventListener('submit', this.#onFormSubmit.bind(this))
-        this.backdrop = new Backdrop(this.scene);
+        // this.backdrop = new Backdrop(this.scene);
 
 
         //Postprocessing
@@ -149,8 +172,20 @@ export class PuzzleApp {
 
         }
 
-
-        
+    async fetchSVGContent(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const svgContent = await response.text();
+            return svgContent;
+        } catch (error) {
+            console.error('Error fetching SVG:', error);
+            return null;
+        }
+        }
+          
 
     onPreviewCheckboxChange(isChecked) {
         if (isChecked) {
@@ -161,7 +196,7 @@ export class PuzzleApp {
 
     }
 
-    async init(image = 'images/7Cw2iDV.jpeg') {
+    async init(image = 'images/7Cw2iDV.jpeg', svgFile) {
 
         if (this.imagePreview) {
             this.imagePreview.setSource(image)
@@ -186,19 +221,21 @@ export class PuzzleApp {
         this.outlinePass.enabled = true;
         this.composer.addPass(this.outlinePass)
 
-        let avg_size = (texture.image.width + texture.image.height) / 2
-        let piece_size = avg_size / 100
-        console.log(this.mainMenu.settingNumPieces)
-        console.log(this.pieceAmounts[this.mainMenu.settingNumPieces])
-        let total_pieces = Math.min(Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size), this.pieceAmounts[this.mainMenu.settingNumPieces])
-        let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)))
-        let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)))
-        console.log(wideReps, highReps)
-        const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps)
-        const svgData = svgFile.create()
 
-        this.puzzle = new Puzzle(svgData, texture)
-        // this.scene.add(this.puzzle.getThumbMesh())
+        //debug
+        let svgString = "/images/adobe_onlyBlack.svg";
+        svgFile = this.fetchSVGContent(svgString);
+        (async () => {
+            const svgContent = await this.fetchSVGContent(svgString);
+            if (svgContent) {
+              const tarWidth = 200;
+              const tarHeight = 200;
+              const scaler = new svgScaler(tarWidth, tarHeight, svgContent);
+              await scaler.init();
+              const svgData = scaler.scaledSVG();
+          
+              this.puzzle = new Puzzle(svgData, texture)
+                      // this.scene.add(this.puzzle.getThumbMesh())
         this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
         console.log(this.camera.position.z)
         const puzzlePieces = this.puzzle.createPieces()
@@ -211,6 +248,51 @@ export class PuzzleApp {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.sounds = [];
         this.initAudio();
+
+            } else {
+              let avg_size = (texture.image.width + texture.image.height) / 2;
+              let piece_size = avg_size / 100;
+              let total_pieces = Math.min(
+                Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size),
+                this.pieceAmounts[this.mainMenu.settingNumPieces]
+              );
+              let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)));
+              let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)));
+              console.log(wideReps, highReps);
+          
+              const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps);
+              const svgData = svgFile.create();
+              this.puzzle = new Puzzle(svgData, texture)
+                      // this.scene.add(this.puzzle.getThumbMesh())
+        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        console.log(this.camera.position.z)
+        const puzzlePieces = this.puzzle.createPieces()
+        this.totalPieces = puzzlePieces.length
+        puzzlePieces.forEach(piece => {
+            this.scene.add(piece);
+        })
+        this.initDragControls()
+        this.render()
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.sounds = [];
+        this.initAudio();
+
+            }
+          })();
+
+        // // this.scene.add(this.puzzle.getThumbMesh())
+        // this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        // console.log(this.camera.position.z)
+        // const puzzlePieces = this.puzzle.createPieces()
+        // this.totalPieces = puzzlePieces.length
+        // puzzlePieces.forEach(piece => {
+        //     this.scene.add(piece);
+        // })
+        // this.initDragControls()
+        // this.render()
+        // this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // this.sounds = [];
+        // this.initAudio();
     
 
         
@@ -252,9 +334,9 @@ export class PuzzleApp {
         this.sounds.push(await this.audioProcessor('sounds/sevenNote.mp3'))
         }
     
-    makeNewPuzzle(image) {
+    makeNewPuzzle(image, svgFile) {
         this.clearBoard()
-        this.init(image)
+        this.init(image, svgFile)
     }
 
     clearBoard() {
@@ -341,7 +423,7 @@ export class PuzzleApp {
 
         TWEEN.update();
 
-        this.backdrop.update()
+        // this.backdrop.update()
 
         
     
@@ -591,7 +673,7 @@ export class PuzzleApp {
         }
 
         if (event.keyCode == 27) {
-            if (this.mainMenu.appearance() == 1) {
+                if (this.mainMenu.appearance() == 1) {
                 this.mainMenu.close()
                 this.mainMenu.modal.classList.remove("open");
             } else {
