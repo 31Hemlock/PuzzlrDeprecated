@@ -8,30 +8,43 @@ export default class svgScaler {
 
   async init() {
     const parser = new DOMParser();
-    const svgDoc = parser.parseFromString(this.svgString, 'image/svg+xml');
+    let svgDoc = parser.parseFromString(this.svgString, 'image/svg+xml');
     const svgElement = svgDoc.documentElement;
   
     const originalWidth = parseFloat(svgElement.getAttribute('width'));
     const originalHeight = parseFloat(svgElement.getAttribute('height'));
   
-    const scaleX = this.tarWidth / originalWidth;
-    const scaleY = this.tarHeight / originalHeight;
+    const scaleX = 1*(this.tarWidth / originalWidth);
+    const scaleY = 1*(this.tarHeight / originalHeight);
   
     // Set the desired width and height on the SVG element.
     svgElement.setAttribute('width', this.tarWidth);
     svgElement.setAttribute('height', this.tarHeight);
   
-    // Update the viewBox attribute to maintain the aspect ratio.
-    const originalViewBox = svgElement.getAttribute('viewBox');
+    // Get or create the viewBox attribute based on the original width and height.
+    let originalViewBox = svgElement.getAttribute('viewBox');
+    if (!originalViewBox) {
+      originalViewBox = `0 0 ${originalWidth} ${originalHeight}`;
+      svgElement.setAttribute('viewBox', originalViewBox);
+    }
+  
     const [viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight] = originalViewBox.split(' ').map(parseFloat);
     const newViewBox = `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
     svgElement.setAttribute('viewBox', newViewBox);
+  
+    // Iterate over all path elements and scale their path data.
+    const pathElements = svgElement.getElementsByTagName('path');
+    for (const pathElement of pathElements) {
+      const originalPathData = pathElement.getAttribute('d');
+      const scaledPathData = this.scalePathData(originalPathData, scaleX, scaleY);
+      pathElement.setAttribute('d', scaledPathData);
+    }
   
     // Serialize the updated SVG element back to a string.
     const serializer = new XMLSerializer();
     this.retStringSVG = serializer.serializeToString(svgElement);
   }
-      
+
   scalePathData(pathData, scaleX, scaleY) {
     // This regular expression will match SVG path commands and coordinates
     const regex = /([A-Za-z])|(-?\d+(\.\d+)?(?:e[-+]?\d+)?[, ]?)+/g;

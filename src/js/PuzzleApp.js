@@ -196,7 +196,7 @@ export class PuzzleApp {
 
     }
 
-    async init(image = 'images/7Cw2iDV.jpeg', svgFile) {
+    async init(image = 'images/7Cw2iDV.jpeg', svgString) {
 
         if (this.imagePreview) {
             this.imagePreview.setSource(image)
@@ -224,13 +224,19 @@ export class PuzzleApp {
 
         //debug
         // change this function entirely to not repeat code, use proper await yadda
-        let svgString = "/images/large_adobe.svg";
-        svgFile = this.fetchSVGContent(svgString);
+        
+        if (!svgString) {
+            console.log('nostring')
+            let svgString = "/images/maincornFlipped.svg";
+        }
+        let svgFile = this.fetchSVGContent(svgString);    
+
         (async () => {
             const svgContent = await this.fetchSVGContent(svgString);
             if (svgContent) {
-              const tarWidth = 5;
-              const tarHeight = 5;
+              const tarWidth = texture.image.width;
+              const tarHeight = texture.image.height;
+              console.log(texture.image.width)
               const scaler = new svgScaler(tarWidth, tarHeight, svgContent);
               await scaler.init();
               const svgData = scaler.scaledSVG();
@@ -623,6 +629,7 @@ export class PuzzleApp {
           
 
     #onDragEnd(event) {
+        console.log(event.object.initVerts)
         this.outlinePass.selectedObjects = []
         this.dragActiveObj.position.z = 0
         this.dragActiveObj = null
@@ -746,7 +753,14 @@ export class PuzzleApp {
     #onMouseUp(event) {
         console.log(event.target)
         if (event.target.classList.contains("chosen-image")) {
-            this.makeNewPuzzle(event.target.src)
+            console.log(event.target.src)
+            // if (event.target.src == 'http://192.168.1.165:8080/assets/images/cd7b19abb5e64293.png') {
+                if (event.target.src == "http://192.168.1.165:8080/assets/images/3bae1b47186e726f.png"){
+                console.log('was')
+                this.makeNewPuzzle(event.target.src, "./geography/usaBest.svg")
+            } else {
+                this.makeNewPuzzle(event.target.src)
+            }
         }
         if (!event.target.classList.contains("mm")) {
             this.mainMenu.close()

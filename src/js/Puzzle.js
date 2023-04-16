@@ -74,9 +74,9 @@ export class Puzzle{
           // }
 
           //uncomment for code to work
-          // piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
-          // piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
-          // piece.geometry.center()
+          piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
+          piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
+          piece.geometry.center()
 
           piece.init()
 
@@ -98,7 +98,7 @@ export class Puzzle{
 
     #getObjectVertices (shape) {
       let exitArray = []
-      
+        console.log(shape)
           for (let i in shape.curves) {
               let line = shape.curves[i]
               const objKeys = Object.keys(shape.curves[i])
@@ -114,7 +114,7 @@ export class Puzzle{
           // Remove duplicates
           let arrUniq = [...new Map(exitArray.map(v => [JSON.stringify(v), v])).values()]
           // remove vertices at index 1 and 2 because they're curve vertices, only used to define curves
-          arrUniq.splice(1, 2);
+          // arrUniq.splice(1, 2);
 
           return arrUniq
   

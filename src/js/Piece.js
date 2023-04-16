@@ -209,8 +209,9 @@ export class Piece extends THREE.Mesh {
               return matchingOtherVertex !== undefined ? vertex : undefined;
             });
             if (matchingVertex) { 
-              let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => x === matchingVertex.x && y === matchingVertex.y);
-              let offset = new THREE.Vector3().subVectors(
+              const TOLERANCE = 0.0001; // adjust this as needed
+              let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => Math.abs(x - matchingVertex.x) < TOLERANCE && Math.abs(y - matchingVertex.y) < TOLERANCE);
+            let offset = new THREE.Vector3().subVectors(
                 this.curVerts[this.initVerts.indexOf(matchingVertex)],
                 otherPiece.curVerts[otherPieceMatchingVertexIndex]
               );
