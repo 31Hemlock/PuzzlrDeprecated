@@ -34,6 +34,9 @@ import * as TWEEN from '@tweenjs/tween.js';
 
 import clouds from 'vanta/dist/vanta.clouds.min'
 
+import VoronoiSvg from './Algs/VoronoiSvg.js';
+
+import VoronoiRelaxedSvg from './Algs/VoronoiRelaxedSvg.js'
 
 
 
@@ -113,6 +116,8 @@ export class PuzzleApp {
         window.addEventListener('wheel', this.#onWheel.bind(this))
         const urlForm = document.getElementById("url-form");
         urlForm.addEventListener('submit', this.#onFormSubmit.bind(this))
+        const regenButton = document.getElementById("regenerate")
+        regenButton.addEventListener('click', this.#regeneratePuzzle.bind(this))
         // this.backdrop = new Backdrop(this.scene);
 
 
@@ -160,6 +165,12 @@ export class PuzzleApp {
             console.log('change')
 
         })
+        this.mainMenu.settingPuzzleTypeDocu.addEventListener('change', () => {
+            this.mainMenu.settingPuzzleType = this.mainMenu.settingPuzzleTypeDocu.selectedIndex
+            console.log('change')
+
+        })
+
 
         this.mainMenu.settingPreviewImage.addEventListener("change",  () => {
             console.log(this.mainMenu)
@@ -170,19 +181,27 @@ export class PuzzleApp {
           
         utils.loadImages()
 
+        this.artSvg = ["/images/maincornFlipped.svg", "/images/maincornFlipped.svg", "/images/maincornFlipped.svg"]
+
         }
 
     async fetchSVGContent(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const svgContent = await response.text();
-            return svgContent;
-        } catch (error) {
-            console.error('Error fetching SVG:', error);
+        console.log(url)
+        if (url == null) {
+            console.log('null svg')
             return null;
+        } else {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const svgContent = await response.text();
+                return svgContent;
+            } catch (error) {
+                console.error('Error fetching SVG:', error);
+                return null;
+            }    
         }
         }
           
@@ -196,8 +215,17 @@ export class PuzzleApp {
 
     }
 
-    async init(image = 'images/7Cw2iDV.jpeg', svgString) {
 
+    #regeneratePuzzle() {
+        console.log('init')
+        this.clearBoard()
+        this.init(this.imgUrl, this.svgString)
+    }
+
+    async init(image = 'images/7Cw2iDV.jpeg', svgString) {
+        this.imgUrl = image
+        this.svgString = svgString
+        let puzzleType = this.mainMenu.settingPuzzleType
         if (this.imagePreview) {
             this.imagePreview.setSource(image)
         } else {
@@ -208,11 +236,8 @@ export class PuzzleApp {
         let texturePrepper = new TexturePrep(image)
         let texture = await texturePrepper.init()
         let avgColor = utils.getAverageColor(texture)
-        console.log(avgColor)
         let resultColor = utils.complementaryThreeColor(avgColor);
-        console.log(resultColor)
         this.outlinePass = new OutlinePass ( new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera)
-        console.log(resultColor)
         this.outlinePass.visibleEdgeColor.set(resultColor);
         this.outlinePass.edgeThickness = 2;
         this.outlinePass.edgeStrength = 2;
@@ -221,71 +246,151 @@ export class PuzzleApp {
         this.outlinePass.enabled = true;
         this.composer.addPass(this.outlinePass)
 
+        // if (!svgString) {
+        //     svgString = "/images/maincornFlipped.svg";
+        // }
 
-        //debug
-        // change this function entirely to not repeat code, use proper await yadda
-        
-        if (!svgString) {
-            console.log('nostring')
-            let svgString = "/images/maincornFlipped.svg";
-        }
-        let svgFile = this.fetchSVGContent(svgString);    
+        let svgContent = await this.fetchSVGContent(svgString);
+        console.log(svgString)
+        console.log(svgContent)
+        let svgData = ''
+        if (svgContent) {
+            const scaler = new svgScaler(texture.image.width, texture.image.height, svgContent);
+            await scaler.init();
+            svgData = await scaler.scaledSVG();
+            this.createPuzzle(svgData, texture)
 
-        (async () => {
-            const svgContent = await this.fetchSVGContent(svgString);
-            if (svgContent) {
-              const tarWidth = texture.image.width;
-              const tarHeight = texture.image.height;
-              console.log(texture.image.width)
-              const scaler = new svgScaler(tarWidth, tarHeight, svgContent);
-              await scaler.init();
-              const svgData = scaler.scaledSVG();
-                console.log(svgData)
-              this.puzzle = new Puzzle(svgData, texture)
-                      // this.scene.add(this.puzzle.getThumbMesh())
-        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
-        console.log(this.camera.position.z)
-        const puzzlePieces = this.puzzle.createPieces()
-        this.totalPieces = puzzlePieces.length
-        puzzlePieces.forEach(piece => {
-            this.scene.add(piece);
-        })
-        this.initDragControls()
-        this.render()
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.sounds = [];
-        this.initAudio();
+        } else {
+            let voronoiRelaxedSVG;
+            switch(puzzleType){
+                case 0: // Fall back to original algorithm
+                    let avg_size = (texture.image.width + texture.image.height) / 2;
+                    let piece_size = avg_size / 100;
+                    let total_pieces = Math.min(
+                    Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size),
+                    this.pieceAmounts[this.mainMenu.settingNumPieces]
+                    );
+                    let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)));
+                    let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)));
+                    console.log(wideReps, highReps);
+                
+                    const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps);
+                    svgData = await svgFile.create();
+                    this.createPuzzle(svgData, texture)
 
-            } else {
-              let avg_size = (texture.image.width + texture.image.height) / 2;
-              let piece_size = avg_size / 100;
-              let total_pieces = Math.min(
-                Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size),
-                this.pieceAmounts[this.mainMenu.settingNumPieces]
-              );
-              let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)));
-              let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)));
-              console.log(wideReps, highReps);
-          
-              const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps);
-              const svgData = svgFile.create();
-              this.puzzle = new Puzzle(svgData, texture)
-                      // this.scene.add(this.puzzle.getThumbMesh())
-        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
-        console.log(this.camera.position.z)
-        const puzzlePieces = this.puzzle.createPieces()
-        this.totalPieces = puzzlePieces.length
-        puzzlePieces.forEach(piece => {
-            this.scene.add(piece);
-        })
-        this.initDragControls()
-        this.render()
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.sounds = [];
-        this.initAudio();
+                    break;
+                case 1:
+                    // implementation coming soon
+                    // let voronoiSVG = new VoronoiSvg(texture.image.width, texture.image.height);
+                    // voronoiSVG.randomSites(100, true, (texture.image.width + texture.image.height)/20);
+                    // svgData = voronoiSVG.generateSVG();
+
+                    voronoiRelaxedSVG = new VoronoiRelaxedSvg(texture.image.width, texture.image.height)
+                    voronoiRelaxedSVG.randomSites(this.pieceAmounts[this.mainMenu.settingNumPieces], true);
+                    console.log(voronoiRelaxedSVG)
+                    voronoiRelaxedSVG.relaxSites(() => {
+                        let svgData = voronoiRelaxedSVG.generateSVG();
+                        console.log(svgData)
+                        this.createPuzzle(svgData, texture)
+
+                    });
+                    break;
+                case 2:
+                    const randomElement = this.artSvg[Math.floor(Math.random() * this.artSvg.length)];
+                    svgContent = await this.fetchSVGContent(randomElement)
+                    const scaler = new svgScaler(texture.image.width, texture.image.height, svgContent);
+                    await scaler.init();
+                    svgData = await scaler.scaledSVG();
+                    this.createPuzzle(svgData, texture)
+                    break;
+    
+                case 3:
+                    voronoiRelaxedSVG = new VoronoiRelaxedSvg(texture.image.width, texture.image.height)
+                    voronoiRelaxedSVG.randomSites(this.pieceAmounts[this.mainMenu.settingNumPieces], true);
+                    console.log(voronoiRelaxedSVG)
+                    voronoiRelaxedSVG.relaxSites(() => {
+                        let svgData = voronoiRelaxedSVG.generateSVG();
+                        console.log(svgData)
+                        let svgDataCurved = this.addCurvesToSVG(svgData);
+                        console.log(svgDataCurved)
+                        this.createPuzzle(svgDataCurved, texture)
+                    });
+                    break;
 
             }
-          })();
+        }
+            this.initDragControls()
+            this.render()
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.sounds = [];
+            this.initAudio();
+
+        
+    }
+    
+
+    createPuzzle(svgData, texture) {
+        this.puzzle = new Puzzle(svgData, texture)
+        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        console.log(this.camera.position.z)
+        const puzzlePieces = this.puzzle.createPieces()
+        this.totalPieces = puzzlePieces.length
+        puzzlePieces.forEach(piece => {
+            this.scene.add(piece);
+        })
+    }
+
+        
+        // (async () => {
+        //     const svgContent = await this.fetchSVGContent(svgString);
+        //     if (svgContent) {
+        //       const scaler = new svgScaler(texture.image.width, texture.image.height, svgContent);
+        //       await scaler.init();
+        //       const svgData = scaler.scaledSVG();
+        //       this.puzzle = new Puzzle(svgData, texture)
+        //         this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        //         console.log(this.camera.position.z)
+        //         const puzzlePieces = this.puzzle.createPieces()
+        //         this.totalPieces = puzzlePieces.length
+        //         puzzlePieces.forEach(piece => {
+        //             this.scene.add(piece);
+        //         })
+        //         this.initDragControls()
+        //         this.render()
+        //         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        //         this.sounds = [];
+        //         this.initAudio();
+
+        //     } else {
+        //       let avg_size = (texture.image.width + texture.image.height) / 2;
+        //       let piece_size = avg_size / 100;
+        //       let total_pieces = Math.min(
+        //         Math.floor(texture.image.width / piece_size) * Math.floor(texture.image.height / piece_size),
+        //         this.pieceAmounts[this.mainMenu.settingNumPieces]
+        //       );
+        //       let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)));
+        //       let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)));
+        //       console.log(wideReps, highReps);
+          
+        //       const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps);
+        //       const svgData = svgFile.create();
+        //       this.puzzle = new Puzzle(svgData, texture)
+        //               // this.scene.add(this.puzzle.getThumbMesh())
+        // this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        // console.log(this.camera.position.z)
+        // const puzzlePieces = this.puzzle.createPieces()
+        // this.totalPieces = puzzlePieces.length
+        // puzzlePieces.forEach(piece => {
+        //     this.scene.add(piece);
+        // })
+        // this.initDragControls()
+        // this.render()
+        // this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // this.sounds = [];
+        // this.initAudio();
+
+        //     }
+        //   })();
 
         // // this.scene.add(this.puzzle.getThumbMesh())
         // this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
@@ -319,8 +424,67 @@ export class PuzzleApp {
     
         // })
 
-    
+        addCurvesToSVG(svgString) {
+            const parser = new DOMParser();
+            const svgDom = parser.parseFromString(svgString, 'image/svg+xml');
+            const pathElements = svgDom.querySelectorAll('path');
+        
+            pathElements.forEach((path) => {
+                let d = path.getAttribute('d');
+                const commands = d.match(/([a-zA-Z])([^a-zA-Z]*)/g).map(command => {
+                    const [letter, ...params] = command.split(/[\s,]+/);
+                    return [letter, ...params.map(parseFloat)];
+                });
+        
+                let newPathCommands = [];
+                for (let i = 0; i < commands.length; i++) {
+                    if (commands[i][0] === 'L' || commands[i][0] === 'M') {
+                        let startX = commands[i][1];
+                        let startY = commands[i][2];
+        
+                        let endX, endY;
+                        if (i + 1 < commands.length && (commands[i + 1][0] === 'L' || commands[i + 1][0] === 'M')) {
+                            endX = commands[i + 1][1];
+                            endY = commands[i + 1][2];
+                        } else {
+                            endX = commands.find(cmd => cmd[0] === 'M')[1];
+                            endY = commands.find(cmd => cmd[0] === 'M')[2];
+                        }
+        
+                        let distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                        let curveFactor = distance * 0.25;
+        
+                        if (startX == 0 || startY == 0 || endX == 0 || endY == 0) {
+                            newPathCommands.push(commands[i].join(' '));
+                            return
+                        }
+                        let midX = (startX + endX) / 2;
+                        let midY = (startY + endY) / 2;
+                        let ctrl1X = this.roundToFixed((startX + midX) / 2 + (Math.random() - 0.5) * curveFactor, 2);
+                        let ctrl1Y = this.roundToFixed((startY + midY) / 2 + (Math.random() - 0.5) * curveFactor, 2);
+                        let ctrl2X = this.roundToFixed((endX + midX) / 2 + (Math.random() - 0.5) * curveFactor, 2);
+                        let ctrl2Y = this.roundToFixed((endY + midY) / 2 + (Math.random() - 0.5) * curveFactor, 2);
+                                
+                        newPathCommands.push(`${commands[i][0]} ${startX} ${startY} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${endX} ${endY}`);
+                    } else {
+                        newPathCommands.push(commands[i].join(' '));
+                    }
+                }
+        
+                newPathCommands.push('Z');
+                path.setAttribute('d', newPathCommands.join(' '));
+            });
+                
+            
+        const serializer = new XMLSerializer();
+        return serializer.serializeToString(svgDom.documentElement);
     }
+
+    roundToFixed(value, decimalPlaces) {
+        return parseFloat(value.toFixed(decimalPlaces));
+    }
+    
+                                                      
 
     async audioProcessor(audioFilePath) {
         const response = await fetch(audioFilePath);
@@ -629,7 +793,6 @@ export class PuzzleApp {
           
 
     #onDragEnd(event) {
-        console.log(event.object.initVerts)
         this.outlinePass.selectedObjects = []
         this.dragActiveObj.position.z = 0
         this.dragActiveObj = null

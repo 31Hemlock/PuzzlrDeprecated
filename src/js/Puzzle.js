@@ -98,7 +98,6 @@ export class Puzzle{
 
     #getObjectVertices (shape) {
       let exitArray = []
-        console.log(shape)
           for (let i in shape.curves) {
               let line = shape.curves[i]
               const objKeys = Object.keys(shape.curves[i])

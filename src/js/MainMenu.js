@@ -19,6 +19,8 @@ export class MainMenu {
         this.modal.classList.add('open')
         this.settingSelectedCount = document.getElementById('pieces-select');
         this.settingNumPieces = this.settingSelectedCount.selectedIndex;
+        this.settingPuzzleTypeDocu = document.getElementById('puzzle-select')
+        this.settingPuzzleType = this.settingPuzzleTypeDocu.selectedIndex;
     }
 
     open() {
