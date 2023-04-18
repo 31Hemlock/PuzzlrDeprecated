@@ -206,21 +206,39 @@ export function rotateAny(obj, direction) {
 //     return images.map(image => `static/menuImages/${image}`);
 //   }
   
-export function moveObjectToPosition(object, targetPosition, duration = 1000) {
+export function moveObjectToPosition(object, targetPosition, duration = 1000, ignoreZ = false) {
     const startPosition = new THREE.Vector3().copy(object.position);
+    const targetPositionCopy = new THREE.Vector3().copy(targetPosition);
+  
+    if (ignoreZ) {
+      targetPositionCopy.z = startPosition.z;
+    }
+  
     const tween = new TWEEN.Tween(startPosition)
-      .to(targetPosition, duration)
+      .to(targetPositionCopy, duration)
       .easing(TWEEN.Easing.Quadratic.Out)
       .onUpdate(() => {
-        object.position.copy(startPosition);
+        if (ignoreZ) {
+          object.position.set(startPosition.x, startPosition.y, object.position.z);
+        } else {
+          object.position.copy(startPosition);
+        }
       })
       .onComplete(() => {
         if (object.moved) {
-            object.moved(false);
+          object.moved(false);
         }
       })
-  
       .start();
-
-    
   }
+  
+
+export function updateCameraPosition(camera, target, factor = 0.1, ignoreZ = true) {
+    const targetPosition = new THREE.Vector3().copy(target.position);
+
+    if (ignoreZ) {
+        targetPosition.z = camera.position.z;
+    }
+
+    camera.position.lerp(targetPosition, factor);
+}

@@ -37,6 +37,7 @@ import clouds from 'vanta/dist/vanta.clouds.min'
 import VoronoiSvg from './Algs/VoronoiSvg.js';
 
 import VoronoiRelaxedSvg from './Algs/VoronoiRelaxedSvg.js'
+import { moveObjectToPosition } from './utils.js'
 
 
 
@@ -49,6 +50,11 @@ export class PuzzleApp {
             return instance
         }
         instance = this
+
+        this.mouse = {}
+        this.mouse.x = 0
+        this.mouse.y = 0
+        this.mouseMoving = ''
         // clouds({
         //     el: '#background',
         //     THREE: THREE,
@@ -133,7 +139,6 @@ export class PuzzleApp {
         this.renderPass = new RenderPass( this.scene, this.camera )
         this.composer.addPass( this.renderPass )
 
-        this.animate()
 
         // Middle mouse handling
         this.isMiddleButtonDown = false
@@ -144,6 +149,7 @@ export class PuzzleApp {
         this.pieceAmounts = [10, 25, 50, 100]
 
         this.init()
+        this.animate()
 
         this.mainMenu.input.addEventListener('change', (event) => {
             console.log('event occurred')
@@ -181,7 +187,7 @@ export class PuzzleApp {
           
         utils.loadImages()
 
-        this.artSvg = ["/images/maincornFlipped.svg", "/images/maincornFlipped.svg", "/images/maincornFlipped.svg"]
+        this.artSvg = ["/artSvg/maincornFlipped.svg", "/artSvg/boxes.svg"]
 
         }
 
@@ -592,7 +598,19 @@ export class PuzzleApp {
     animate() {
         requestAnimationFrame(() => this.animate());
 
+
         TWEEN.update();
+
+        // if (this.dragActiveObj && this.mouseMoving) {
+        //     let easingFactor;
+        //     if (this.mouseMoving) {
+        //         easingFactor = 0.01
+        //     } else {
+        //         easingFactor *= 0.9
+        //     }
+        //     utils.updateCameraPosition(this.camera, this.dragActiveObj, easingFactor, true)
+        //     this.mouseMoving = false
+        // }
 
         // this.backdrop.update()
 
@@ -610,14 +628,71 @@ export class PuzzleApp {
         this.composer.render()
 
       }
-        
-      tick(deltaTime) {
-        if (this.dragActiveObj) {
-            // console.log(deltaObjTime)   
-            this.dragActiveObj.position.z = this.mapElapsedTime(deltaTime)
-            this.render() 
-        }
 
+      mapMousePositionToSpeed(value, threshold) {
+        const deadzone = 1 - threshold;
+        if (Math.abs(value) < deadzone) {
+          return 0;
+        } else {
+          return (Math.abs(value) - deadzone) * Math.sign(value);
+        }
+      }
+      
+      lerp(start, end, alpha) {
+        return start + (end - start) * alpha;
+      }
+
+      centerCamera(smoothing = 0.4, sensitivity = 60) {
+        if (this.dragActiveObj) {
+            this.camera.position.x = this.lerp(this.camera.position.x, this.dragActiveObj.position.x, smoothing);
+            this.camera.position.y = this.lerp(this.camera.position.y, this.dragActiveObj.position.y, smoothing);    
+            this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
+            this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+
+        }
+      }
+      
+      tick(deltaTime) {
+
+        if (this.dragActiveObj) {
+            this.dragActiveObj.position.z = this.mapElapsedTime(deltaTime)
+        }
+        this.render()
+        // const sensitivity = 60; // Adjust this value to change camera movement sensitivity
+        // const smoothing = 0.4; // Adjust this value to change the smoothing effect (0.1 = 10% interpolation)
+
+        // //       if (this.mouse.x && this.mouse.y && this.camera) {
+        // //     this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
+        // //     this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+    
+        // // }
+        // console.log(this.camera.position)
+
+        // if (this.dragActiveObj) {
+        //     // console.log(deltaObjTime)   
+        //     this.dragActiveObj.position.z = this.mapElapsedTime(deltaTime)
+        //         // this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
+        //         // this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+        //         const threshold = 0.8; // Adjust this value to change the size of the non-moving zone
+        //         const speedX = this.mapMousePositionToSpeed(this.mouse.x, threshold);
+        //         const speedY = this.mapMousePositionToSpeed(this.mouse.y, threshold);
+        //         const targetPositionX = this.camera.position.x + speedX * sensitivity;
+        //         const targetPositionY = this.camera.position.y + speedY * sensitivity;
+              
+        //         this.camera.position.x = this.lerp(this.camera.position.x, targetPositionX, smoothing);
+        //         this.camera.position.y = this.lerp(this.camera.position.y, targetPositionY, smoothing);
+                  
+        //     this.render() 
+        // } 
+      
+        // else {
+        //     const threshold = 0.5; // Adjust this value to change the size of the non-moving zone
+        //     const speedX = this.mapMousePositionToSpeed(this.mouse.x, threshold);
+        //     const speedY = this.mapMousePositionToSpeed(this.mouse.y, threshold);
+        //     this.camera.position.x += speedX * sensitivity;
+        //     this.camera.position.y += speedY * sensitivity;
+    
+        // }
         // console.log(this.mapElapsedTime(deltaObjTime))
         // event.object.position.z = this.mapElapsedTime(deltaTime)
 
@@ -662,13 +737,19 @@ export class PuzzleApp {
     }
 
     #dragStart(event) {
+
+
+        // Handle glow
         this.outlinePass.selectedObjects = [event.object]
+        
+        // Set active object
         this.dragActiveObj = event.object;
         this.imagePreview.setNonInteractive()
         this.draggedObjTimer = performance.now();
     }
 
     #onDrag(event) {
+        this.isDragging = true;
         this.render()
     }
 
@@ -798,7 +879,7 @@ export class PuzzleApp {
         this.dragActiveObj = null
         this.imagePreview.setInteractive()
         this.playSound(0, this.mainMenu.settingSound.checked);
-
+        console.log(event.object)
         event.object.moved()
         // for (let i = this.scene.children.length - 1; i >= 0; i--) {
         //     const child = this.scene.children[i];
@@ -853,6 +934,9 @@ export class PuzzleApp {
             //this.html.getelementbyid.css = 'block' on and off
 
         }
+        if (event.keyCode == 16) {
+            this.centerCamera()
+        }
 
         if (event.keyCode == 48) {
             this.positionPiecesAndPieceGroups()
@@ -886,6 +970,10 @@ export class PuzzleApp {
         }
     }
     #onMouseMove(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;      
+        this.mouseMoving = true;
+      
         if (this.isMiddleButtonDown) {
             event.preventDefault()
         const deltaX = event.clientX - this.lastMouseX;

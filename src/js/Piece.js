@@ -16,6 +16,7 @@ export class Piece extends THREE.Mesh {
       this.normalizedInitVerts = []
       this.previousRotation = this.rotation.z
       this.num = num
+      this.name = num
       this.connectionDistance = [40, 40]
 
     }

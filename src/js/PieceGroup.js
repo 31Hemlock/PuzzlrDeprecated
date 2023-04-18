@@ -285,6 +285,11 @@ export class PieceGroup extends THREE.Group {
     rotate(direction) {
       rotateAny(this, direction)  
     }
+
+    pairAnimation() {
+      let main = new PuzzleApp()
+      // main.glowObject()
+    }
   
     async setCurVerts() {
         return new Promise((resolve) => {
