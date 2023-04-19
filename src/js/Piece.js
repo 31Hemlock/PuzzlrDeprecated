@@ -25,9 +25,6 @@ export class Piece extends THREE.Mesh {
       this.setNormalizedInitVerts(this.initVerts).then(() => {
         this.setCurVerts()
         this.setDims()
-        // .then(() => {
-        //   console.log('Current verts set!')
-        // })
       })
     }
 
@@ -135,8 +132,6 @@ export class Piece extends THREE.Mesh {
       rotateAny(this, direction)
     }
       
-  
-    // Add extra functionality to the Piece object here
   
 
     // set this.positions to an array of objects containing original vertices

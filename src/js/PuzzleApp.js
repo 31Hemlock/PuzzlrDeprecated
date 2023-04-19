@@ -38,7 +38,7 @@ import VoronoiSvg from './Algs/VoronoiSvg.js';
 
 import VoronoiRelaxedSvg from './Algs/VoronoiRelaxedSvg.js'
 import { moveObjectToPosition } from './utils.js'
-
+import * as getV from './Algs/VoronoiPuzzleG.js'
 
 
 
@@ -55,6 +55,7 @@ export class PuzzleApp {
         this.mouse.x = 0
         this.mouse.y = 0
         this.mouseMoving = ''
+        this.cameraZone = [200, 7000]
         // clouds({
         //     el: '#background',
         //     THREE: THREE,
@@ -315,9 +316,9 @@ export class PuzzleApp {
                     voronoiRelaxedSVG.randomSites(this.pieceAmounts[this.mainMenu.settingNumPieces], true);
                     console.log(voronoiRelaxedSVG)
                     voronoiRelaxedSVG.relaxSites(() => {
-                        let svgData = voronoiRelaxedSVG.generateSVG();
-                        console.log(svgData)
-                        let svgDataCurved = this.addCurvesToSVG(svgData);
+                        // let voronoiPuzzle = new VoronoiPuzzle(voronoiRelaxedSVG.generateSVG())
+                        // voronoiPuzzle.init()
+                        let svgDataCurved = getV.get(voronoiRelaxedSVG.generateSVG())
                         console.log(svgDataCurved)
                         this.createPuzzle(svgDataCurved, texture)
                     });
@@ -642,14 +643,38 @@ export class PuzzleApp {
         return start + (end - start) * alpha;
       }
 
-      centerCamera(smoothing = 0.4, sensitivity = 60) {
-        if (this.dragActiveObj) {
-            this.camera.position.x = this.lerp(this.camera.position.x, this.dragActiveObj.position.x, smoothing);
-            this.camera.position.y = this.lerp(this.camera.position.y, this.dragActiveObj.position.y, smoothing);    
-            this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
-            this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+      zoomCamera(desiredZoom) {
+        // Clamp desiredZoom between 0 and 1
+        desiredZoom = Math.max(0, Math.min(1, desiredZoom));
+      
+        // Calculate the new camera z-position based on the desired zoom level and cameraZone range
+        const newZ = this.cameraZone[0] + desiredZoom * (this.cameraZone[1] - this.cameraZone[0]);
+      
+        // Calculate the ratio of the new z-position to the current z-position
+        const zRatio = newZ / this.camera.position.z;
+      
+        // Calculate the new camera position while preserving the x and y components
+        const newPosition = new THREE.Vector3(
+          this.dragActiveObj.position.x + (this.camera.position.x - this.dragActiveObj.position.x) * zRatio,
+          this.dragActiveObj.position.y + (this.camera.position.y - this.dragActiveObj.position.y) * zRatio,
+          newZ
+        );
+      
+        // Update the camera's position
+        return newPosition
+      }
+                                    
 
-        }
+      centerCamera(smoothing = 0.4, sensitivity = 60) {
+        // if (this.dragActiveObj) {
+        //     this.camera.position.x = this.lerp(this.camera.position.x, this.dragActiveObj.position.x, smoothing);
+        //     this.camera.position.y = this.lerp(this.camera.position.y, this.dragActiveObj.position.y, smoothing);    
+        //     this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
+        //     this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+
+        // }
+        this.camera.position.x = this.dragActiveObj.position.x
+        this.camera.position.y = this.dragActiveObj.position.y
       }
       
       tick(deltaTime) {
@@ -737,7 +762,7 @@ export class PuzzleApp {
     }
 
     #dragStart(event) {
-
+        this.dragOffset = event.offset
 
         // Handle glow
         this.outlinePass.selectedObjects = [event.object]
@@ -935,7 +960,38 @@ export class PuzzleApp {
 
         }
         if (event.keyCode == 16) {
-            this.centerCamera()
+            if (this.dragActiveObj) {
+                this.camera.position
+                let newPos = this.zoomCamera(0.05)
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+            }
+        }
+        if (event.keyCode == 67) {
+            console.log(this.camera.position)
+            if (this.puzzle) {
+                let newPos = new THREE.Vector3(0, 0, (this.puzzle.texture.image.width + this.puzzle.texture.image.height)* 1.3)
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+
+            }
+            console.log(this.camera.position)
+        }
+        if (event.keyCode == 88) {
+            console.log(this.camera.position)
+            if (this.puzzle) {
+                let newPos = new THREE.Vector3(0, 0, this.puzzle.texture.image.width + this.puzzle.texture.image.height)
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+
+            }
+            console.log(this.camera.position)
+        }
+        if (event.keyCode == 90) {
+            console.log(this.camera.position)
+            if (this.puzzle) {
+                let newPos = new THREE.Vector3(0, 0, (this.puzzle.texture.image.width + this.puzzle.texture.image.height)*0.7)
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+
+            }
+            console.log(this.camera.position)
         }
 
         if (event.keyCode == 48) {
@@ -943,6 +999,38 @@ export class PuzzleApp {
         }
     }
 
+    moveMeshToMouse(mesh) {
+        // Get the position of the canvas element relative to the viewport
+        const canvasBounds = this.renderer.domElement.getBoundingClientRect();
+      
+        // Adjust mouse coordinates based on the canvas position within the viewport
+        const adjustedMouseX = (this.mouse.x + 1) * 0.5 * canvasBounds.width;
+        const adjustedMouseY = (1 - this.mouse.y) * 0.5 * canvasBounds.height;
+      
+        // Normalize adjusted mouse coordinates to the range of -1 to 1
+        const mouseX = (adjustedMouseX / canvasBounds.width) * 2 - 1;
+        const mouseY = -(adjustedMouseY / canvasBounds.height) * 2 + 1;
+      
+        // Create a raycaster
+        const raycaster = new THREE.Raycaster();
+      
+        // Set the raycaster's position and direction based on the adjusted mouse coordinates
+        raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
+      
+        // Create a plane to cast rays on (assuming the mesh is located on the z=0 plane)
+        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+      
+        // Calculate the intersection point between the ray and the plane
+        const intersection = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, intersection);
+      
+        // Add the drag offset to the intersection point
+        intersection.sub(this.dragOffset);
+      
+        // Set the mesh's x, y position to the updated intersection point
+        mesh.position.set(intersection.x, intersection.y, mesh.position.z);
+      }
+                              
     #onFormSubmit(event) {
         
         event.preventDefault()
@@ -968,10 +1056,11 @@ export class PuzzleApp {
         if (event.target.classList.contains("settings-main")) {
             this.mainMenu.toggleSettings();
         }
+
     }
     #onMouseMove(event) {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;      
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;    
         this.mouseMoving = true;
       
         if (this.isMiddleButtonDown) {
@@ -1027,9 +1116,10 @@ export class PuzzleApp {
     #onWheel(event) {
         if (this.mainMenu.appearance() == 0) {
             this.deltaCameraZ += event.deltaY;
+            console.log(this.deltaCameraZ)
             while (this.deltaCameraZ != 0) {
                 let newPos = this.camera.position.z + this.deltaCameraZ/10
-                if (!(newPos > 7000) && !(newPos < 200)) {
+                if (!(newPos > this.cameraZone[1]) && !(newPos < this.cameraZone[0])) {
                     this.camera.position.z = newPos
                 }
                 this.deltaCameraZ = Math.abs(this.deltaCameraZ) > 1 ? this.deltaCameraZ/10 : this.deltaCameraZ = 0;

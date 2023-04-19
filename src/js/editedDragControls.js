@@ -160,6 +160,7 @@ class DragControls extends EventDispatcher {
 				} else {
 					_selected = _intersections[0].object.parent
 				}
+			
 				// _selected = (_intersections[0].object.parent == "Scene") ? : _intersections[0].object.parent;
 				// ( scope.transformGroup === true ) ? _objects[ 0 ] : 
 				// if selected object is a group, make it = _intersections[0].object[0]
@@ -171,12 +172,11 @@ class DragControls extends EventDispatcher {
 
 					_inverseMatrix.copy( _selected.parent.matrixWorld ).invert();
 					_offset.copy( _intersection ).sub( _worldPosition.setFromMatrixPosition( _selected.matrixWorld ) );
-
 				}
 
 				_domElement.style.cursor = 'move';
-
-				scope.dispatchEvent( { type: 'dragstart', object: _selected } );
+				// , dragOffset: intersection.point.sub(event.object.position)
+				scope.dispatchEvent( { type: 'dragstart', object: _selected, offset: _offset } );
 
 			}
 
