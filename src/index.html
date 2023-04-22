@@ -10,7 +10,11 @@
 
 <body>
     <div id="Application">
-        <div id="main"></div>
+        <div id="main">
+            <div id="video"  class="background no-interaction" style="width:100%;height:100%;position:absolute;">
+                <video id="backgroundVideo"muted class="background no-interaction" style="height:100%;position:absolute;z-index:-5" autoplay ></video> 
+            </div>
+        </div>
         <div id="background"></div>
         <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 
@@ -40,9 +44,9 @@
                 <h2 class="mm">Settings</h2>
                 <h4 class="mm" for="pieces-select">Number of Pieces:</h4>
                 <select class="mm" id="pieces-select">
-                    <option class="mm" value="easy">A few</option>
+                    <option selected class="mm" value="easy">A few</option>
                     <option class="mm" value="medium">A good amount</option>
-                    <option selected class="mm" value="hard">Lots.</option>
+                    <option class="mm" value="hard">Lots.</option>
                     <option class="mm" value="hard">AAAA!!! TOO MANY!!</option>
 
                 </select>
@@ -83,7 +87,6 @@
 
         </div>
         
-
     </div>
 
 </body>

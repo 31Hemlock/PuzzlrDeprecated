@@ -56,6 +56,7 @@ export class PuzzleApp {
         this.mouse.y = 0
         this.mouseMoving = ''
         this.cameraZone = [200, 7000]
+        this.successEdgeStrength = 5;
         // clouds({
         //     el: '#background',
         //     THREE: THREE,
@@ -88,6 +89,16 @@ export class PuzzleApp {
 
         this.startTime = performance.now()
         this.sounds = []
+        this.pairingColors = [
+            '#cd7f32', // Bronze
+            '#c28e4d',
+            '#b79c68',
+            '#acaa83', // Silver
+            '#a1b89e',
+            '#95c6b9',
+            '#89d4d4', // Gold          
+        ]
+
 
 
         // set some initial values
@@ -238,8 +249,6 @@ export class PuzzleApp {
         } else {
             this.imagePreview = new ImagePreview(image)
         }
-
-        console.log('outsidecolor')
         let texturePrepper = new TexturePrep(image)
         let texture = await texturePrepper.init()
         let avgColor = utils.getAverageColor(texture)
@@ -251,7 +260,20 @@ export class PuzzleApp {
         this.outlinePass.edgeGlow = 3;
         this.outlinePass.pulsePeriod = 5;
         this.outlinePass.enabled = true;
+
+        this.outlinePassSuccess = new OutlinePass ( new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera)
+        this.outlinePassSuccess.visibleEdgeColor.set(new THREE.Color("#FFD700"));
+        this.outlinePassSuccess.edgeThickness = 2;
+        this.outlinePassSuccess.edgeStrength = 2;
+        this.outlinePassSuccess.edgeGlow = 2;
+        this.outlinePassSuccess.enabled = true;
+
+
         this.composer.addPass(this.outlinePass)
+        this.composer.addPass(this.outlinePassSuccess)
+
+        // this.outlinePass.selectedObjects = []
+        // this.outlinePassSuccess.selectedObjects = []
 
         // if (!svgString) {
         //     svgString = "/images/maincornFlipped.svg";
@@ -962,7 +984,7 @@ export class PuzzleApp {
         if (event.keyCode == 16) {
             if (this.dragActiveObj) {
                 this.camera.position
-                let newPos = this.zoomCamera(0.05)
+                let newPos = this.zoomCamera(0.1)
                 utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
             }
         }
@@ -997,6 +1019,14 @@ export class PuzzleApp {
         if (event.keyCode == 48) {
             this.positionPiecesAndPieceGroups()
         }
+        if (event.keyCode == 49) {
+            document.getElementById("backgroundVideo").src = "videos/jf1.mp4"
+            document.getElementById("backgroundVideo")
+        }
+        if (event.keyCode == 32) {
+            this.centerCamera()
+        }
+
     }
 
     moveMeshToMouse(mesh) {

@@ -5,6 +5,7 @@ import { VertMarker } from './VertMarker';
 import { PuzzleApp } from './PuzzleApp';
 import { rotationValues } from './constants'
 import { rotateAny } from './utils.js'
+import * as TWEEN from '@tweenjs/tween.js';
 
 
 export class PieceGroup extends THREE.Group {
@@ -16,13 +17,17 @@ export class PieceGroup extends THREE.Group {
     }
 
     async init() {
-        await this.playGroupSound()
+
         await this.createVerts()
         await this.createCurVerts()
         await this.decomposeAndRecompose()
+
         await this.setNormalizedInitVerts(this.initVerts)
+
         await this.setStartingPosition()
         await this.setDims()
+        await this.playGroupSound()
+
             }
 
 
@@ -47,36 +52,45 @@ export class PieceGroup extends THREE.Group {
 
     }
 
+
     playGroupSound() {
+      console.log('group sound')
       // get total number of puzzle pieces, get number of pieces passed as args to this function, use ratio to play sound
       const main = new PuzzleApp()
-      console.log(this.pieces)
-      let currentPieces = this.countPieces(this.pieces)
+      let currentPieces = this.children.length
       const pieceRatio = currentPieces / main.totalPieces
       console.log(pieceRatio)
       if (main.mainMenu.settingSound.checked) {
+        console.log(pieceRatio)
         switch(true) {
-          case pieceRatio < 0.14:
-            main.playSound(1)
-            break;
-          case pieceRatio < 0.28:
-            main.playSound(2)
-            break;
-          case pieceRatio < 0.42:
-            main.playSound(3)
-            break;
-          case pieceRatio < 0.56:
-            main.playSound(4)
-            break;
-          case pieceRatio < 0.7:
-            main.playSound(5)
-            break;
-          case pieceRatio < 1:
-            main.playSound(6)
-            break;
           case pieceRatio == 1:
             main.playSound(7)
+            this.winAnimation()
             break; 
+          case pieceRatio > 0.9:
+            main.playSound(6)
+            this.pairAnimation(main.pairingColors[6], 7)
+            break;
+          case pieceRatio > 0.7:
+            main.playSound(5)
+            this.pairAnimation(main.pairingColors[4], 5)
+            break;
+          case pieceRatio > 0.56:
+            main.playSound(4)
+            this.pairAnimation(main.pairingColors[3], 4)
+            break;
+          case pieceRatio > 0.42:
+            main.playSound(3)
+            this.pairAnimation(main.pairingColors[2], 3)
+            break;
+          case pieceRatio > 0.28:
+            main.playSound(2)
+            this.pairAnimation(main.pairingColors[1], 2)
+            break;
+          case pieceRatio > 0.14:
+            main.playSound(1)
+            this.pairAnimation(main.pairingColors[0], 1)
+            break;
         }
   
       }
@@ -203,6 +217,8 @@ export class PieceGroup extends THREE.Group {
     async createVerts() {
         let combined = []
         for (let piece of this.pieces) {
+            // Set scale to 1 to prevent animation bugs
+            piece.scale.set(1,1,1)
             combined.push(piece.initVerts)
             
         }
@@ -286,11 +302,176 @@ export class PieceGroup extends THREE.Group {
       rotateAny(this, direction)  
     }
 
-    pairAnimation() {
-      let main = new PuzzleApp()
-      // main.glowObject()
+    pairAnimation(color, strength) {
+      let main = new PuzzleApp();
+      main.outlinePassSuccess.selectedObjects = [this];
+      let glowColor = new THREE.Color(color);
+      // Check if an animation is in progress and stop it
+      if (this.fadeInTween && this.fadeOutTween) {
+        this.fadeInTween.stop();
+        this.fadeOutTween.stop();
+      }
+      
+      // Define the initial and final values for the outlinePassSuccess's edge strength
+      let fromValue = { edgeStrength: 0, scale: 1 };
+      let midValue = { edgeStrength: strength, scale: 1.02 };
+      let toValue = { edgeStrength: 0, scale: 1 };
+      main.outlinePassSuccess.visibleEdgeColor.set(glowColor);
+      console.log(main.outlinePassSuccess)
+      console.log(glowColor)
+      this.fadeInTween = new TWEEN.Tween(fromValue)
+        .to(midValue, 400) // Duration of 500 milliseconds for fadeIn
+        .easing(TWEEN.Easing.Cubic.InOut)
+        .onUpdate(() => {
+          main.outlinePassSuccess.edgeStrength = fromValue.edgeStrength;
+          this.scale.set(fromValue.scale, fromValue.scale, fromValue.scale);
+        });
+    
+      this.fadeOutTween = new TWEEN.Tween(midValue)
+        .to(toValue, 400) // Duration of 500 milliseconds for fadeOut
+        .easing(TWEEN.Easing.Cubic.InOut)
+        .onUpdate(() => {
+          main.outlinePassSuccess.edgeStrength = midValue.edgeStrength;
+          this.scale.set(midValue.scale, midValue.scale, midValue.scale);
+        })
+        .onComplete(() => {
+          // Clear selectedObjects after the animation is complete
+          main.outlinePassSuccess.selectedObjects = [];
+          main.outlinePassSuccess.edgeStrength = strength;
+          this.scale.set(1, 1, 1);
+        });
+    
+      // Stop the ongoing animation if a new group is formed
+      this.fadeInTween.chain(this.fadeOutTween);
+      this.fadeInTween.start();
     }
-  
+
+
+    winAnimation() {
+      let main = new PuzzleApp();
+      main.outlinePassSuccess.selectedObjects = [this];
+    
+      // Check if an animation is in progress and stop it
+      if (this.fadeInTween && this.fadeOutTween) {
+        this.fadeInTween.stop();
+        this.fadeOutTween.stop();
+      }
+    
+      // Define the initial and final values for the outlinePassSuccess's edge strength
+      let fromValue = { edgeStrength: 0, scale: 1 };
+      let midValue = { edgeStrength: 5, scale: 1.2 };
+      let toValue = { edgeStrength: 0, scale: 1 };
+
+      
+      let firstRotate = {rotation: 0}
+      let lastRotate = {rotation: 2 * Math.PI}
+      this.fadeInTween = new TWEEN.Tween(fromValue)
+        .to(midValue, 300) // Duration of 500 milliseconds for fadeIn
+        .easing(TWEEN.Easing.Cubic.InOut)
+        .onUpdate(() => {
+          main.outlinePassSuccess.edgeStrength = fromValue.edgeStrength;
+          main.outlinePassSuccess.pulsePeriod = 3
+          this.scale.set(fromValue.scale, fromValue.scale, fromValue.scale);
+        });
+    
+      this.fadeOutTween = new TWEEN.Tween(midValue)
+      .to(toValue, 1200) // Duration of 500 milliseconds for fadeOut
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .onUpdate(() => {
+        main.outlinePassSuccess.edgeStrength = midValue.edgeStrength;
+        this.scale.set(midValue.scale, midValue.scale, midValue.scale);
+      })
+      .onComplete(() => {
+        // Clear selectedObjects after the animation is complete
+        main.outlinePassSuccess.selectedObjects = [];
+        main.outlinePassSuccess.edgeStrength = 5;
+        this.scale.set(1, 1, 1);
+      });
+
+      // this.rotateTween = new TWEEN.Tween(firstRotate)
+      //   .to(lastRotate, 1000) // Duration of 500 milliseconds for fadeOut
+      //   .easing(TWEEN.Easing.Quadratic.Out)
+      //   .onUpdate(() => {
+      //     for (let child of this.children) {
+      //       child.rotation.x = firstRotate.rotation;
+      //       child.rotation.y = firstRotate.rotation;
+
+      //     }
+          
+      //   })
+      //   .onComplete(() => {
+      //     // Clear selectedObjects after the animation is complete
+      //     // main.outlinePassSuccess.selectedObjects = [];
+      //     // main.outlinePassSuccess.edgeStrength = main.successEdgeStrength;
+      //     // this.scale.set(1, 1, 1);
+      //   });
+    
+      // Stop the ongoing animation if a new group is formed
+      // this.fadeInTween.chain(this.rotateTween);
+      this.fadeInTween.chain(this.fadeOutTween);
+      this.fadeInTween.start();
+      this.danceAllPieces()
+      // this.rotateTween.start()
+
+    }
+
+    danceAllPieces() {
+      console.log('dance')
+      let largestDistance = -Infinity;
+      let referencePoint;
+    
+      for (const child of this.children) {
+        const childPos = new THREE.Vector2(child.position.x, child.position.y);
+        const distance = childPos.length();
+    
+        if (distance > largestDistance) {
+          largestDistance = distance;
+          referencePoint = childPos;
+        }
+      }
+    
+      const sortedChildren = [];
+      console.log(this.children)
+      for (let child of this.children) {
+        const childPos = new THREE.Vector2(child.position.x, child.position.y);
+        const distance = childPos.distanceTo(referencePoint);
+        const distanceChildPair = { distance, child };
+        console.log(distanceChildPair)
+        let index = sortedChildren.findIndex(pair => pair.distance < distance);
+        if (index === -1) {
+          sortedChildren.push(distanceChildPair);
+        } else {
+          sortedChildren.splice(index, 0, distanceChildPair);
+        }
+      }
+      console.log(sortedChildren)
+      // Extract only children from the sorted array (removing distance)
+      const childrenSorted = sortedChildren.map(pair => pair.child);
+      console.log(childrenSorted)
+      childrenSorted.forEach((child, index) => {
+        const delay = index * 25; // 0.1 second stagger
+        this.animateChild(child, delay);
+      });
+    }
+        
+    animateChild(child, delay) {
+      console.log('alors')
+      let firstRotate = {rotation: 0};
+      let lastRotate = {rotation: 2 * Math.PI};
+    
+      this.objAnimTween = new TWEEN.Tween(firstRotate)
+        .to(lastRotate, 1700) // Customize duration (1000ms = 1 second)
+        .delay(delay)
+        .easing(TWEEN.Easing.Quadratic.Out) // Customize easing function
+        .onUpdate(() => {
+          // Update the child's rotation in the scene
+          // child.rotation.x = firstRotate.rotation; // You should set the value of the rotation property instead of the whole object
+          child.rotation.y = firstRotate.rotation; // You should set the value of the rotation property instead of the whole object
+        })
+        .start();
+    }
+        
+
     async setCurVerts() {
         return new Promise((resolve) => {
   

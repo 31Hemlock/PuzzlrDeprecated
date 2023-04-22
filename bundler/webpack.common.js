@@ -87,7 +87,16 @@ module.exports = {
                     outputPath: 'assets/sounds/'
                   }
                 }
-              }
+              },
+            // Videos
+            {
+                test: /\.(mp4|mkv)$/,
+                type: 'asset/resource',
+                generator:
+                {
+                    filename: 'assets/videos/[hash][ext]'
+                }
+            }
               
         ]
     }
