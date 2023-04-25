@@ -19,8 +19,6 @@ export class Backdrop {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(Math.random() * 100 - 5, Math.random() * 100 - 5, 0);
         movingMeshes.push(mesh);
-        console.log(mesh)
-        console.log(this.scene)
       }
   
       return movingMeshes;

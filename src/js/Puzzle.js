@@ -45,7 +45,7 @@ export class Puzzle{
 
       let material = new THREE.MeshBasicMaterial({
         side: THREE.DoubleSide,
-        depthWrite: true,
+        depthWrite: false,
         map: pieceTexture,
         transparent: true
               })

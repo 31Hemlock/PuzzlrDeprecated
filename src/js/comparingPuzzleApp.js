@@ -81,12 +81,8 @@ export class PuzzleApp {
         this.scene = new THREE.Scene()
 
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000)
-        this.ambientLight = new THREE.AmbientLight(0x505050, 1.5)
-        // this.spotLight = new THREE.SpotLight(0xffffff, 1.5);
-        // const pointLight = new THREE.PointLight(0xffffff, 2, 1000);
-        // pointLight.position.set(50, 50, 50);
-        // this.scene.add(pointLight);
-
+        this.ambientLight = new THREE.AmbientLight(0x505050)
+        this.spotLight = new THREE.SpotLight(0xffffff, 1.5);
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: true
@@ -103,25 +99,8 @@ export class PuzzleApp {
             '#acaa83', // Silver
             '#a1b89e',
             '#95c6b9',
-            '#89d4d4', // Gold
+            '#89d4d4', // Gold          
         ]
-
-
-        // Texture loader
-        this.loader = new GLTFLoader()
-        this.loader.load('/blend/BB_023_stock.glb', (glb) => {
-            
-            const obj = glb.scene;
-            console.log(obj)
-            this.scene.add(obj)
-            obj.scale.set(1000, 1000, 1000)
-            // obj.position.set(0, 0, -3800)
-            obj.rotation.set(0.5 * Math.PI, 1.5 * Math.PI, 0)
-            console.log(this.scene)
-            console.log(obj.position)
-        }, undefined, (error) => {
-            console.error('An error occurred and the model is undefined:', error);
-        })
 
 
 
@@ -130,15 +109,14 @@ export class PuzzleApp {
         // this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
 
         this.camera.position.set(0, 0, 1000)
-        this.camera.rotation.set(0.6, 0, 0)
 
-        // this.spotLight.position.set(0, 0, 50)
-        // this.spotLight.angle = Math.PI / 9;
-        // this.spotLight.castShadow = true;
-        // this.spotLight.shadow.camera.near = 1000;
-        // this.spotLight.shadow.camera.far = 4000;
-        // this.spotLight.shadow.mapSize.width = 1024;
-        // this.spotLight.shadow.mapSize.height = 1024;
+        this.spotLight.position.set(0, 0, 50)
+        this.spotLight.angle = Math.PI / 9;
+        this.spotLight.castShadow = true;
+        this.spotLight.shadow.camera.near = 1000;
+        this.spotLight.shadow.camera.far = 4000;
+        this.spotLight.shadow.mapSize.width = 1024;
+        this.spotLight.shadow.mapSize.height = 1024;
 
         this.renderer.setPixelRatio(window.devicePixelRatio)
         this.renderer.shadowMap.enabled = true
@@ -189,6 +167,7 @@ export class PuzzleApp {
         this.animate()
 
         this.mainMenu.input.addEventListener('change', (event) => {
+            console.log('event occurred')
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.addEventListener('load', () => {
@@ -204,15 +183,18 @@ export class PuzzleApp {
 
         this.mainMenu.settingSelectedCount.addEventListener('change', () => {
             this.mainMenu.settingNumPieces = this.mainMenu.settingSelectedCount.selectedIndex
+            console.log('change')
 
         })
         this.mainMenu.settingPuzzleTypeDocu.addEventListener('change', () => {
             this.mainMenu.settingPuzzleType = this.mainMenu.settingPuzzleTypeDocu.selectedIndex
+            console.log('change')
 
         })
 
 
         this.mainMenu.settingPreviewImage.addEventListener("change",  () => {
+            console.log(this.mainMenu)
             this.onPreviewCheckboxChange(this.mainMenu.settingPreviewImage.checked);
           });
 
@@ -227,6 +209,7 @@ export class PuzzleApp {
     async fetchSVGContent(url) {
         console.log(url)
         if (url == null) {
+            console.log('null svg')
             return null;
         } else {
             try {
@@ -255,6 +238,7 @@ export class PuzzleApp {
 
 
     #regeneratePuzzle() {
+        console.log('init')
         this.clearBoard()
         this.init(this.imgUrl, this.svgString)
     }
@@ -299,6 +283,8 @@ export class PuzzleApp {
         // }
 
         let svgContent = await this.fetchSVGContent(svgString);
+        console.log(svgString)
+        console.log(svgContent)
         let svgData = ''
         if (svgContent) {
             const scaler = new svgScaler(texture.image.width, texture.image.height, svgContent);
@@ -318,6 +304,7 @@ export class PuzzleApp {
                     );
                     let wideReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.width / texture.image.height)));
                     let highReps = Math.ceil(Math.sqrt(total_pieces * (texture.image.height / texture.image.width)));
+                    console.log(wideReps, highReps);
                 
                     const svgFile = new PuzzleSVG(texture.image.width, texture.image.height, wideReps, highReps);
                     svgData = await svgFile.create();
@@ -332,8 +319,10 @@ export class PuzzleApp {
 
                     voronoiRelaxedSVG = new VoronoiRelaxedSvg(texture.image.width, texture.image.height)
                     voronoiRelaxedSVG.randomSites(this.pieceAmounts[this.mainMenu.settingNumPieces], true);
+                    console.log(voronoiRelaxedSVG)
                     voronoiRelaxedSVG.relaxSites(() => {
                         let svgData = voronoiRelaxedSVG.generateSVG();
+                        console.log(svgData)
                         this.createPuzzle(svgData, texture)
 
                     });
@@ -350,6 +339,7 @@ export class PuzzleApp {
                 case 3:
                     voronoiRelaxedSVG = new VoronoiRelaxedSvg(texture.image.width, texture.image.height)
                     voronoiRelaxedSVG.randomSites(this.pieceAmounts[this.mainMenu.settingNumPieces], true);
+                    console.log(voronoiRelaxedSVG)
                     voronoiRelaxedSVG.relaxSites(() => {
                         // let voronoiPuzzle = new VoronoiPuzzle(voronoiRelaxedSVG.generateSVG())
                         // voronoiPuzzle.init()
@@ -374,6 +364,7 @@ export class PuzzleApp {
     createPuzzle(svgData, texture) {
         this.puzzle = new Puzzle(svgData, texture)
         this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        console.log(this.camera.position.z)
         const puzzlePieces = this.puzzle.createPieces()
         this.totalPieces = puzzlePieces.length
         puzzlePieces.forEach(piece => {
@@ -589,6 +580,7 @@ export class PuzzleApp {
         // this.outlinePass = null
         // this.puzzle = null
 
+        console.log(this)
               
     }
 
@@ -1132,12 +1124,9 @@ export class PuzzleApp {
         }
           
     #onMouseUp(event) {
-        console.log(event.target)
         if (event.target.classList.contains("chosen-image")) {
-            console.log(event.target.src)
             // if (event.target.src == 'http://192.168.1.165:8080/assets/images/cd7b19abb5e64293.png') {
                 if (event.target.src == "http://192.168.1.165:8080/assets/images/3bae1b47186e726f.png"){
-                console.log('was')
                 this.makeNewPuzzle(event.target.src, "./geography/usaBest.svg")
             } else {
                 this.makeNewPuzzle(event.target.src)
