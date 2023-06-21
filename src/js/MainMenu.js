@@ -1,3 +1,6 @@
+
+import { PuzzleApp } from "./PuzzleApp"
+
 export class MainMenu {
     constructor() {
         this.modal = document.getElementById('mainmenu')
@@ -13,10 +16,11 @@ export class MainMenu {
         this.settingPreviewImage = document.getElementById('preview-checkbox');
         console.log(this.settingPreviewImage)
         this.settingSound = document.getElementById('sound-checkbox');
+        this.main = new PuzzleApp()
     }
 
     init() {
-        this.modal.classList.add('open')
+        // this.modal.classList.add('open')
         this.settingSelectedCount = document.getElementById('pieces-select');
         this.settingNumPieces = this.settingSelectedCount.selectedIndex;
         this.settingPuzzleTypeDocu = document.getElementById('puzzle-select')
@@ -26,11 +30,31 @@ export class MainMenu {
     open() {
         this.appearanceState = 1
         this.modal.classList.add('open');
+        console.log(this.modal.classList)
 
     }
     close() {
+        if (this.main.camera.rotation.x != 0 && this.main.camera.rotation.x != 0.7) {
+            this.main.centerCamera()
+        }
         this.appearanceState = 0
         this.modal.classList.remove('open');
+
+        // Remove error message text (if exists)
+        let elements = document.querySelectorAll(".invalid-url");
+
+        // Iterate over elements and remove "shadowrealm" class
+        elements.forEach(function(element) {
+            if (!element.classList.contains("shadowrealm")) {
+                element.classList.add("shadowrealm");
+            }
+        });
+
+    }
+
+    resetView() {
+        this.showMain()
+        this.modal.scrollTop = 0;
     }
 
 

@@ -186,13 +186,15 @@ form {
   align-items: center;
 }
 
-#image-container {
+.image-containers {
   display:inline-block;
+  width:96%;
   padding:2%;
 }
 
 .image-wrapper {
   display: inline-block;
+  max-width:40%;
   width: 200px; /* Set the desired width */
   height: 100px; /* Set the desired height */
   overflow: hidden;
@@ -274,7 +276,7 @@ form {
 
 #imagePreview {
   max-width: 500px;
-  max-height: 500px;
+  max-height: 400px;
   display: block;
   margin: 0 auto;
   position: relative;
@@ -430,4 +432,136 @@ input[type=checkbox]:checked::before {
 #main {
   position:absolute;
   z-index:0;
+}
+
+
+
+/* Loader */
+#loading-screen {
+	position: absolute;
+	z-index: 2;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: #000000;
+	opacity: 1;
+ 	transition: 1s opacity;
+}
+
+#loading-screen.fade-out {
+    opacity: 0;
+}
+
+#loader {
+    display: block;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #9370DB;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 2s linear infinite;
+}
+#loader:before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #BA55D3;
+    -webkit-animation: spin 3s linear infinite;
+    animation: spin 3s linear infinite;
+}
+#loader:after {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #FF00FF;
+    -webkit-animation: spin 1.5s linear infinite;
+    animation: spin 1.5s linear infinite;
+}
+@-webkit-keyframes spin {
+    0%   {
+        -webkit-transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+@keyframes spin {
+    0%   {
+        -webkit-transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+
+/* Controls popup */
+#controls {
+  display:inline-block;
+  z-index:1;
+  background: #f4f2ee;
+  position: fixed; /* Changed to fixed to stick to bottom right */
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  transform: translate(9vw, calc(100% - 37px)); /* Adjust 50px to match the height of your button */
+  transition: transform 0.5s, padding 0.5s; /* Added transition for padding */
+
+  background-color: #f4f2ee;
+  border: 1px solid #3d405b;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  padding: 0; /* Set padding to 0 initially */
+
+}
+
+#controls.controls-open {
+  transform: translateY(0);
+  padding: 20px; /* Add padding when opened */
+  padding-top:5px;
+}
+
+#toggleControls {
+  left: 0; /* Adjust to set distance from the left */
+  top: 0; /* Adjust to set distance from the top */
+  font-size: 18px; /* Adjust font size as needed */
+  padding: 5px; /* Set padding as needed */
+  transition: transform 0.5s, width 0.5s, margin 0.5s; /* Added transition for font-size */
+  margin:0px;
+}
+
+#controls.controls-open #toggleControls {
+  font-size: 18px; /* Increase the font size when the div is opened */
+  transform: scale(1); /* Bring the button to its normal size */
+  width:100%;
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
+.controls-inner {
+  position:relative;
 }

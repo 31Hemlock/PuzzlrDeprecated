@@ -1,21 +1,23 @@
 import * as THREE from 'three'
 
 export class TexturePrep{
-    constructor(textureReference) { // consider adding thumbnail/puzzle dims
+    constructor(textureReference, maxWidth = 2000, maxHeight = 1300) { // default values are set here, can be overridden
         this.textureReference = textureReference // an instance of objectTexture or stringTexture from main code
         this.textureLoader = new THREE.TextureLoader()
-        
+        this.maxWidth = maxWidth
+        this.maxHeight = maxHeight
     }
 
     init() {
         return new Promise((resolve, reject) => {
             if (typeof this.textureReference === "object") {
-                resolve(this.textureLoader.load(this.textureReference));
+                let texture = this.textureLoader.load(this.textureReference);
+                resolve(this.resizeTexture(texture));
             } else if (typeof this.textureReference === "string") {
                 this.textureLoader.load(
                 this.textureReference,
                 (texture) => {
-                    resolve(texture);
+                    resolve(this.resizeTexture(texture));
                 },
                 undefined,
                 (error) => {
@@ -28,5 +30,37 @@ export class TexturePrep{
         });
         
     }
+
+    resizeTexture(texture) {
+        let canvas = document.createElement('canvas');
+        let context = canvas.getContext('2d');
     
+        let aspectRatio = texture.image.width / texture.image.height;
+    
+        let newWidth = texture.image.width;
+        let newHeight = texture.image.height;
+    
+        if(newWidth > this.maxWidth) {
+            newWidth = this.maxWidth;
+            newHeight = this.maxWidth / aspectRatio;
+        }
+    
+        if(newHeight > this.maxHeight) {
+            newHeight = this.maxHeight;
+            newWidth = this.maxHeight * aspectRatio;
+        }
+    
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+    
+        // Draw the image to the canvas, resizing it
+        context.drawImage(texture.image, 0, 0, texture.image.width, texture.image.height, 0, 0, canvas.width, canvas.height);
+    
+        // Use the canvas as the source of a new texture
+        let newTexture = new THREE.Texture(canvas);
+        newTexture.needsUpdate = true;
+    
+        return newTexture;
+    }
+        
 }

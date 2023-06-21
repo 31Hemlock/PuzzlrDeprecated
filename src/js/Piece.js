@@ -18,6 +18,7 @@ export class Piece extends THREE.Mesh {
       this.num = num
       this.name = num
       this.connectionDistance = [40, 40]
+      this.castShadow = true
 
     }
 

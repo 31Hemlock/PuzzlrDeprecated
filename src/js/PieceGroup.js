@@ -17,7 +17,6 @@ export class PieceGroup extends THREE.Group {
     }
 
     async init() {
-
         await this.createVerts()
         await this.createCurVerts()
         await this.decomposeAndRecompose()
@@ -67,27 +66,27 @@ export class PieceGroup extends THREE.Group {
             main.playSound(7)
             this.winAnimation()
             break; 
-          case pieceRatio > 0.9:
+          case pieceRatio > 0.85:
             main.playSound(6)
             this.pairAnimation(main.pairingColors[6], 7)
             break;
-          case pieceRatio > 0.7:
+          case pieceRatio > 0.68:
             main.playSound(5)
             this.pairAnimation(main.pairingColors[4], 5)
             break;
-          case pieceRatio > 0.56:
+          case pieceRatio > 0.51:
             main.playSound(4)
             this.pairAnimation(main.pairingColors[3], 4)
             break;
-          case pieceRatio > 0.42:
+          case pieceRatio > 0.34:
             main.playSound(3)
             this.pairAnimation(main.pairingColors[2], 3)
             break;
-          case pieceRatio > 0.28:
+          case pieceRatio > 0.17:
             main.playSound(2)
             this.pairAnimation(main.pairingColors[1], 2)
             break;
-          case pieceRatio > 0.14:
+          case pieceRatio > 0:
             main.playSound(1)
             this.pairAnimation(main.pairingColors[0], 1)
             break;
@@ -200,6 +199,9 @@ export class PieceGroup extends THREE.Group {
       for (let piece of this.pieces) {
           if (piece instanceof PieceGroup) {
               for (let child of piece.children.slice()) {
+                  let newMaterial = child.material.clone()
+                  newMaterial.depthWrite = true;
+                  child.material = newMaterial;
                   child.position.copy(child.getWorldPosition(new THREE.Vector3()));
                   child.rotation.copy(piece.rotation);
                   piece.remove(child)
@@ -207,6 +209,9 @@ export class PieceGroup extends THREE.Group {
               }
               piece.destruct()
           } else if (piece instanceof Piece) {
+              let newMaterial = piece.material.clone()
+              newMaterial.depthWrite = true;
+              piece.material = newMaterial;
               this.add(piece)
           }
       }
@@ -411,6 +416,39 @@ export class PieceGroup extends THREE.Group {
       this.fadeInTween.chain(this.fadeOutTween);
       this.fadeInTween.start();
       this.danceAllPieces()
+      let inactivityTimer;
+      let isTimerRunning = false;
+      
+      function startTimer() {
+          // Only start the timer if it's not already running
+          if (!isTimerRunning) {
+              inactivityTimer = setTimeout(function() {
+                  main.mainMenu.open();
+              }, 2000);
+              isTimerRunning = true;
+          }
+      }
+      
+      function resetTimer() {
+          // If the timer is running, clear it and start a new one
+          if (isTimerRunning) {
+              clearTimeout(inactivityTimer);
+              inactivityTimer = setTimeout(function() {
+                isTimerRunning = false;
+                  main.mainMenu.open();
+              }, 2000);
+          }
+      }
+      
+      // Attach event listeners to the window to listen for activity
+      window.addEventListener('keydown', resetTimer);
+      window.addEventListener('wheel', resetTimer);
+      
+      // Start the timer at some point
+      // For example, after a button is clicked:
+      startTimer()
+
+      
       // this.rotateTween.start()
 
     }

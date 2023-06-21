@@ -2,3 +2,5 @@ node_modules
 ideas
 .vscode
 static
+dist
+public

@@ -10,6 +10,11 @@
 
 <body>
     <div id="Application">
+        <section id="loading-screen">
+
+            <div id="loader"></div>
+        
+        </section>
         <div id="main">
             <div id="video"  class="background no-interaction" style="width:100%;height:100%;position:absolute;">
                 <video id="backgroundVideo"muted class="background no-interaction" style="height:100%;position:absolute;z-index:-5" autoplay ></video> 
@@ -22,30 +27,39 @@
             <span id="mm-close" class="close">&times;</span>
             <img src="/static/images/settings.svg" class="settings-button settings-main mm" id="settings-main"alt="Settings Icon" />
             <div class="startmenu-content display mm" id="startmenu-content">
-                <h2 class="mm">Welcome to Puzzlr!</h2>
-                <h4 class="mm">Choose an image to get started:</h4>
+                <h2 class="mm" id="welcome">Welcome to Puzzlr!</h2>
+                <h4 class="mm" id="choose">Choose an image to get started:</h4>
                 <input type="file" id="mm-file-input" class="mm">
-                <form id="url-form" class="mm">
-                    <h4 class="mm">Or, reference a file on the internet:</h4>
-                    <input type="text" id="mm-text-input" class="mm" name="url" placeholder="https://awesomesite.com/totally-sick-picture-of-a-cloud-or-something">
-                    <button id="externalUrl" class="mm-submit-btn mm">Submit</button>
-                </form>
+
+
                 <h4 class="mm">Test your geography skills here:</h4>
-                <div id="imageblocks-geography" class="geography mm">
-                    <div class="image-wrapper">
-                        <img src="/static/geography/usaworst.png" class="chosen-image">
+                <div id="imageblocks-geography" class="geography mm image-containers">
+                    <div class="image-wrapper mm">
+                        <img src="/static/geography/imgSmall/northAmerica.png" class="mm chosen-image geography">
                     </div>
+                    <div class="image-wrapper mm">
+                        <img src="/static/geography/imgSmall/southAmerica.png" class="mm chosen-image geography">
+                    </div>
+
                 </div>
                 <h4 class="mm">Or, choose one of our images!</h4>
-                <div class="mm" id="image-container"></div>
+                <div class="mm image-containers" id="image-container"></div>
+                <form id="url-form" class="mm">
+                    <h4 class="mm"> Reference a file from the internet (Experimental):</h4>
+                    <input type="text" id="mm-text-input" class="mm" name="url" placeholder="https://awesomesite.com/totally-sick-picture-of-a-cloud-or-something">
+                    <h4 class="mm invalid-url shadowrealm" style="color:rgb(190, 101, 101);margin:0"> Failed to load image! </h4> 
+                    <h4 class="mm invalid-url shadowrealm" style="color:rgb(190, 101, 101);margin:0">Many websites will not work by default. Must be direct link.</h4>
+                    <button id="externalUrl" class="mm-submit-btn mm">Submit</button>
+                </form>
+
             </div>
 
             <div class="startmenu-content settings-content mm" id="settings-content">
                 <h2 class="mm">Settings</h2>
                 <h4 class="mm" for="pieces-select">Number of Pieces:</h4>
                 <select class="mm" id="pieces-select">
-                    <option selected class="mm" value="easy">A few</option>
-                    <option class="mm" value="medium">A good amount</option>
+                    <option class="mm" value="easy">A few</option>
+                    <option selected class="mm" value="medium">A good amount</option>
                     <option class="mm" value="hard">Lots.</option>
                     <option class="mm" value="hard">AAAA!!! TOO MANY!!</option>
 
@@ -85,6 +99,19 @@
             <img alt="Your image description" id="imagePreview" class="image">
             <button id="pinButton" class="pin-button mm">Pin</button>
 
+        </div>
+
+        <div class="controls mm" id="controls">
+            <button id="toggleControls" class="mm" tabindex="-1">Controls</button>
+            <div class="controls-inner mm" id="controlsInner">
+                <picture class="mm">
+                    <source media="(min-width: 2560px)" class="mm" srcset="/static/controls/Controls300.png">
+                    <source media="(min-width: 1920px)" class="mm" srcset="/static/controls/Controls250.png">
+                    <source media="(min-width: 1300px)" class="mm" srcset="/static/controls/Controls200.png">
+                    <source media="(min-width: 900px)" class="mm" srcset="/static/controls/Controls150.png">
+                    <img src="/static/controls/Controls150.png" class="mm" alt="This image will be loaded on small screens or if no other sources match.">
+                </picture>
+            </div>    
         </div>
         
     </div>

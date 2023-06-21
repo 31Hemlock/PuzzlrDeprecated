@@ -93,10 +93,10 @@ export function rotateAny(obj, direction) {
 
   export async function loadImages() {
     const imageContainer = document.getElementById('image-container');
-    let imgLen = 24
+    let imgLen = 40
     let images = []
         for (let i=1;i<=imgLen;i++) {
-            images.push('menuImages/' + i + '.jpg')
+            images.push('previewMenuImages/' + i + '.jpg')
         }
     images.forEach(imageSrc => {
       const wrapper = document.createElement('div');
@@ -206,37 +206,38 @@ export function rotateAny(obj, direction) {
 //     return images.map(image => `static/menuImages/${image}`);
 //   }
   
-export function moveObjectToPosition(object, targetPosition, duration = 1000, ignoreZ = false, meshToMouse = false) {
-    const startPosition = new THREE.Vector3().copy(object.position);
-    const targetPositionCopy = new THREE.Vector3().copy(targetPosition);
-    let main = new PuzzleApp()
-    if (ignoreZ) {
+export function moveObjectToPosition(object, targetPosition, duration = 1000, ignoreZ = false, meshToMouse = false, targetRotationX = object.rotation.x) {
+  const startPosition = new THREE.Vector3().copy(object.position);
+  const startRotationX = object.rotation.x; // store the starting x rotation
+  const targetPositionCopy = new THREE.Vector3().copy(targetPosition);
+  let main = new PuzzleApp();
+  if (ignoreZ) {
       targetPositionCopy.z = startPosition.z;
-    }
-  
-    const tween = new TWEEN.Tween(startPosition)
-      .to(targetPositionCopy, duration)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate(() => {
-        if (main.dragActiveObj && meshToMouse) {
-          main.moveMeshToMouse(main.dragActiveObj)
-          main.render()
-        }
-        if (ignoreZ) {
-          object.position.set(startPosition.x, startPosition.y, object.position.z);
-        } else {
-          object.position.copy(startPosition);
-        }
-      })
-      .onComplete(() => {
-        if (object.moved) {
-          object.moved(false);
-        }
-
-      })
-      .start();
   }
-  
+
+  const tween = new TWEEN.Tween({ progress: 0 })
+    .to({ progress: 1 }, duration)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onUpdate(({ progress }) => {
+      const currentX = startPosition.x + (targetPositionCopy.x - startPosition.x) * progress;
+      const currentY = startPosition.y + (targetPositionCopy.y - startPosition.y) * progress;
+      const currentZ = ignoreZ ? object.position.z : startPosition.z + (targetPositionCopy.z - startPosition.z) * progress;
+      object.position.set(currentX, currentY, currentZ);
+      object.rotation.x = startRotationX + (targetRotationX - startRotationX) * progress;
+
+      if (main.dragActiveObj && meshToMouse) {
+        main.moveMeshToMouse(main.dragActiveObj);
+        main.render();
+      }
+    })
+    .onComplete(() => {
+      if (object.moved) {
+        object.moved(false);
+      }
+    })
+    .start();
+}
+
 
 export function updateCameraPosition(camera, target, factor = 0.1, ignoreZ = true) {
   let targetPosition;
@@ -251,4 +252,29 @@ export function updateCameraPosition(camera, target, factor = 0.1, ignoreZ = tru
     }
 
     camera.position.lerp(targetPosition, factor);
+}
+
+
+export function removeOutliers(array, outliersCount) {
+  // Calculate initial average
+  const initialAverage = array.reduce((a, b) => a + b, 0) / array.length;
+
+  // Create a copy of the array with additional property - distance from the average
+  let arrayWithDist = array.map((value) => ({
+      value: value,
+      distance: Math.abs(initialAverage - value),
+  }));
+
+  // Sort the array by distance property in descending order
+  arrayWithDist.sort((a, b) => b.distance - a.distance);
+
+  // Remove outliersCount number of elements from the array
+  arrayWithDist = arrayWithDist.slice(outliersCount);
+
+  // Now arrayWithDist holds the values without outliers
+  // Get the array of original values back
+  const valuesWithoutOutliers = arrayWithDist.map((item) => item.value);
+
+  // Calculate and return new average
+  return valuesWithoutOutliers.reduce((a, b) => a + b, 0) / valuesWithoutOutliers.length;
 }

@@ -4,6 +4,7 @@ import { Piece } from './Piece.js'
 import {
   SVGLoader
 } from "three/examples/jsm/loaders/SVGLoader";
+import { PuzzleApp } from './PuzzleApp.js';
 import { rotationValues } from './constants'
 
 export class Puzzle{
@@ -12,7 +13,6 @@ export class Puzzle{
         this.svg = svg
         this.svgLoader = new SVGLoader()
         this.texture = texture // an instance of objectTexture or stringTexture from main code
-        
     }
         
     getThumbMesh() {
@@ -73,9 +73,12 @@ export class Puzzle{
           //   piece.position.set(-400, -400, 0)
           // }
 
-          //uncomment for code to work
           piece.position.set(getRandBetween(0 - (this.texture.image.width/1.5), this.texture.image.width/1.5), getRandBetween(0 - this.texture.image.height/1.5, this.texture.image.height / 1.5), 0)
-          piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
+          
+          let main = new PuzzleApp()
+          if (!main.touchScreen) { // If desktop, allow piece rotation, otherwise just set them all to not rotate
+            piece.rotation.z = rotationValues[Math.floor(Math.random() * rotationValues.length)]
+          } 
           piece.geometry.center()
 
           piece.init()

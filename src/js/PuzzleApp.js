@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { DragControls } from './editedDragControls.js'
+import { DragControls } from './angledDragControls.js'
 import { Piece } from './Piece.js'
 import { PieceGroup } from './PieceGroup.js'
 import { Puzzle } from './Puzzle.js'
@@ -18,6 +18,9 @@ import {
 import {
     MainMenu
 } from './MainMenu.js'
+import {
+    ControlMenu
+} from './ControlMenu.js'
 import  {
     ImagePreview
 } from './ImagePreview'
@@ -42,6 +45,9 @@ import * as getV from './Algs/VoronoiPuzzleG.js'
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+
+
 
 
 
@@ -54,12 +60,57 @@ export class PuzzleApp {
         }
         instance = this
 
+        this.mainMenu = new MainMenu()
+        this.controlMenu = new ControlMenu()
+        console.log(this.mainMenu)
+        // Loading screen
+        const manager = new THREE.LoadingManager();
+
+        manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
+            console.log( 'Started loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+        };
+        
+        manager.onLoad = () => {
+            const loadingScreen = document.getElementById( 'loading-screen' );
+            console.log('loaded')
+            loadingScreen.classList.add( 'fade-out' );
+            
+            // optional: remove loader from DOM via event listener
+            loadingScreen.addEventListener( 'transitionend', this.onTransitionEnd );
+            console.log(this.mainMenu)
+            setTimeout(() => {
+                this.mainMenu.open();
+            }, 500);
+        };
+                
+        manager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+            console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+        };
+        
+        manager.onError = function ( url ) {
+            console.log( 'There was an error loading ' + url );
+        };
+            
+            
+
+
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        this.touchScreen;
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0) {
+            this.touchScreen = 1
+        } else {
+            this.touchScreen = 0
+        }
+
         this.mouse = {}
         this.mouse.x = 0
         this.mouse.y = 0
         this.mouseMoving = ''
         this.cameraZone = [200, 7000]
         this.successEdgeStrength = 5;
+        this.perspective = 1
+
         // clouds({
         //     el: '#background',
         //     THREE: THREE,
@@ -81,7 +132,8 @@ export class PuzzleApp {
         this.scene = new THREE.Scene()
 
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000)
-        this.ambientLight = new THREE.AmbientLight(0x505050, 1.5)
+        this.numPuzzles = 0
+        // this.ambientLight = new THREE.AmbientLight(0x505050, 1.5)
         // this.spotLight = new THREE.SpotLight(0xffffff, 1.5);
         // const pointLight = new THREE.PointLight(0xffffff, 2, 1000);
         // pointLight.position.set(50, 50, 50);
@@ -91,7 +143,6 @@ export class PuzzleApp {
             antialias: true,
             alpha: true
         });
-        this.mainMenu = new MainMenu()
 
 
         this.startTime = performance.now()
@@ -107,30 +158,60 @@ export class PuzzleApp {
         ]
 
 
+
+        // Baked textures
+        this.textureLoader = new THREE.TextureLoader(manager)
+        const bakedTexture = this.textureLoader.load('./blend/bakeMay25LittleDarker.png')
+        // bakedTexture.encoding = THREE.sRGBEncoding
+        bakedTexture.flipY = false
+
+        const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture})
+
         // Texture loader
-        this.loader = new GLTFLoader()
-        this.loader.load('/blend/BB_023_stock.glb', (glb) => {
+        const dracoLoader = new DRACOLoader(manager);
+        dracoLoader.setDecoderPath('/draco/');
+        this.loader = new GLTFLoader(manager);
+        this.loader.setDRACOLoader(dracoLoader);
+
+        this.loader.load('./blend/Room.glb', (glb) => {
             
+            glb.scene.traverse((child) => {
+                child.material = bakedMaterial;
+            })
+
             const obj = glb.scene;
             console.log(obj)
             this.scene.add(obj)
-            obj.scale.set(1000, 1000, 1000)
-            // obj.position.set(0, 0, -3800)
+            obj.scale.set(700, 700, 700)
+            obj.position.set(0, 1200, -1600)
             obj.rotation.set(0.5 * Math.PI, 1.5 * Math.PI, 0)
             console.log(this.scene)
             console.log(obj.position)
+
+    
+
         }, undefined, (error) => {
             console.error('An error occurred and the model is undefined:', error);
+        })
+
+        // Add snowflake particles
+        this.addSnowflakes()
+
+        // Background
+        this.textureLoader.load('/images/outside2.png', (backgroundTexture) => {
+            let backgroundGeometry = new THREE.PlaneGeometry(11000, 11000);
+            let backgroundMaterial = new THREE.MeshBasicMaterial({ map: backgroundTexture});
+            let backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial)
+            backgroundMesh.rotation.x = 1.57
+            backgroundMesh.position.x = 100
+            backgroundMesh.position.y = 3200
+            backgroundMesh.position.z = -400
+            this.scene.add(backgroundMesh)    
         })
 
 
 
         // set some initial values
-        this.scene.background = new THREE.Color(0xf0f0f0)
-        // this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
-
-        this.camera.position.set(0, 0, 1000)
-        this.camera.rotation.set(0.6, 0, 0)
 
         // this.spotLight.position.set(0, 0, 50)
         // this.spotLight.angle = Math.PI / 9;
@@ -140,14 +221,41 @@ export class PuzzleApp {
         // this.spotLight.shadow.mapSize.width = 1024;
         // this.spotLight.shadow.mapSize.height = 1024;
 
+        this.scene.background = new THREE.Color(0x384661) //0xf0f0f0
+        // this.renderer.setClearColor(0x000000, 0); // Set clearColor with an alpha value of 0 (fully transparent)
+
+        this.camera.position.set(0, -6500, 1000)
+        this.camera.rotation.set(1.3, 0, 0)
+
         this.renderer.setPixelRatio(window.devicePixelRatio)
-        this.renderer.shadowMap.enabled = true
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        // this.renderer.shadowMap.enabled = true
+        // this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.outputEncoding = THREE.sRGBEncoding
 
         // add everything to the scene
         this.scene.add(this.camera);
-        this.scene.add(this.ambientLight)
-        this.scene.add(this.spotLight)
+        // this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        // this.directionalLight.position.set(100, 0, 300); // Change position to illuminate the background from a certain angle
+        // this.directionalLight.castShadow = true;
+        // this.directionalLight.shadow.camera.left = -10000;
+        // this.directionalLight.shadow.camera.right = 10000;
+        // this.directionalLight.shadow.camera.top = 10000;
+        // this.directionalLight.shadow.camera.bottom = -10000;
+
+        // this.scene.add(this.directionalLight);
+
+        // const backgroundGeometry = new THREE.PlaneGeometry(5000, 3000);
+        // const radialGradientTexture = this.createLinearGradientTexture(512, 'rgba(41, 40, 40, 0.5)',  'rgba(74, 59, 59, 1)');
+        // const backgroundMaterial = new THREE.MeshBasicMaterial({ map: radialGradientTexture });
+        // const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+        // background.position.set(0, 0, -20);
+        // this.scene.add(background);
+        //         this.directionalLight.shadow.mapSize.width = 4096; // Increase shadow map resolution for better quality shadows
+        // this.directionalLight.shadow.mapSize.height = 4096;
+        // this.directionalLight.shadow.camera.near = 0.5;
+        // this.directionalLight.shadow.camera.far = 5000; // Increase the far value to cover more distance
+        
+
         this.container.appendChild(this.renderer.domElement)
         window.addEventListener('resize', this.#onWindowResize.bind(this))
         window.addEventListener('keydown', this.#onKeyDown.bind(this))
@@ -253,10 +361,148 @@ export class PuzzleApp {
 
     }
 
+    onTransitionEnd( event ) { // just removes the loading screen animation
 
+        event.target.remove();
+        
+    }
+
+    addSnowflakes() {
+        let positions = [], velocities = [], alphas = [];
+        this.numSnowflakes = 1300;
+        this.snowMaxRange = 10000;
+        this.snowMinRange = this.snowMaxRange / 2;
+        this.snowMinHeight = 150;
+        let geometry = new THREE.BufferGeometry();
+        let sizes = [];
+        let fadeIns = new Uint8Array(this.numSnowflakes); // Boolean array for fading in state
+
+
+        for (let i = 0; i < this.numSnowflakes; i++) {
+            positions.push(
+                (Math.random() * this.snowMaxRange - this.snowMinRange),
+                (Math.random() * this.snowMinRange + this.snowMinHeight) - 2500,
+                (Math.random() * this.snowMaxRange - this.snowMinRange)
+            );
+            velocities.push(
+                (Math.random() * 6 - 3) * 0.3,
+                (Math.random() * 5 + 0.12) * 0.1,
+                0.7
+            );
+            sizes.push(Math.random() * 3 + 5);  // Random size between 5 and 20
+            alphas.push(1); // Initial alpha value
+            fadeIns[i / 3] = 0; // 0 for false
+
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('velocity', new THREE.Float32BufferAttribute(velocities, 3));
+        geometry.setAttribute('alpha', new THREE.Float32BufferAttribute(alphas, 1)); // Alpha attribute
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+        geometry.setAttribute('fadeIn', new THREE.BufferAttribute(fadeIns, 1));
+
+
+        this.textureLoader.load('/images/snowflake.png', (snowflakeTexture) => {
+
+            let vertexShader = `
+            attribute float alpha;
+            attribute float size;
+            
+            varying float vAlpha;
+            
+            void main() {
+                vAlpha = alpha;
+            
+                gl_PointSize = size;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+            `;
+            
+            let fragmentShader = `
+            uniform sampler2D map;
+        
+            varying float vAlpha;
+        
+            void main() {
+                vec4 texColor = texture2D(map, gl_PointCoord);
+                gl_FragColor = vec4(texColor.rgb, texColor.a * vAlpha);
+            }
+        `;
+                    
+            // When you create the PointsMaterial
+            const flakeMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    map: { value: snowflakeTexture }
+                },
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true,
+                depthTest: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+            });
+                        
+            this.particles = new THREE.Points(geometry, flakeMaterial)
+            this.scene.add(this.particles)
+        })
+        
+    }
+
+    updateParticles() {
+        if (this.particles) {
+            for (let i = 0; i < this.numSnowflakes * 3; i += 3) {
+                this.particles.geometry.attributes.position.array[i] -= this.particles.geometry.attributes.velocity.array[i];
+                this.particles.geometry.attributes.position.array[i + 1] -= this.particles.geometry.attributes.velocity.array[i + 1];
+                this.particles.geometry.attributes.position.array[i + 2] -= this.particles.geometry.attributes.velocity.array[i + 2];
+    
+                if (this.particles.geometry.attributes.position.array[i + 1] < 2100) { // Start fading out 100 units before the lower limit
+                    this.particles.geometry.attributes.alpha.array[i / 3] -= 0.01;
+                }
+    
+                if (this.particles.geometry.attributes.position.array[i + 1] < 2000) {
+                    this.particles.geometry.attributes.position.array[i] = Math.floor(Math.random() * this.snowMaxRange - this.snowMinRange) - 200;
+                    this.particles.geometry.attributes.position.array[i + 1] = 3000;
+                    this.particles.geometry.attributes.position.array[i + 2] = Math.floor(Math.random() * this.snowMaxRange - this.snowMinRange);
+                    this.particles.geometry.attributes.alpha.array[i / 3] = 0; // snowflake starts as transparent
+                    this.particles.geometry.attributes.fadeIn.array[i / 3] = true; // snowflake is in the fading-in state
+                } else if (this.particles.geometry.attributes.fadeIn.array[i / 3]) { // if snowflake is in the fading-in state
+                    this.particles.geometry.attributes.alpha.array[i / 3] += 0.01; // increase its alpha value
+                    if (this.particles.geometry.attributes.alpha.array[i / 3] >= 1) { // if snowflake has become fully opaque
+                        this.particles.geometry.attributes.fadeIn.array[i / 3] = false; // remove it from the fading-in state
+                    }
+                } else if (this.particles.geometry.attributes.position.array[i + 1] > 3000) {
+                    this.particles.geometry.attributes.position.array[i + 1] = 3000;
+                }
+            }
+            this.particles.geometry.attributes.position.needsUpdate = true;
+            this.particles.geometry.attributes.alpha.needsUpdate = true;
+            this.particles.geometry.attributes.fadeIn.needsUpdate = true; // Tell Three.js to update the fadeIn attribute
+        }
+    }
+            
+    createLinearGradientTexture(size, innerColor, outerColor) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext('2d');
+      
+        const gradient = context.createLinearGradient(
+          size / 2, size / 2, 0,
+          size / 2, size / 2, size / 2
+        );
+        gradient.addColorStop(0, innerColor);
+        gradient.addColorStop(1, outerColor);
+      
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, size, size);
+      
+        return new THREE.CanvasTexture(canvas);
+        
+      }
+      
     #regeneratePuzzle() {
         this.clearBoard()
         this.init(this.imgUrl, this.svgString)
+
     }
 
     async init(image = 'images/7Cw2iDV.jpeg', svgString) {
@@ -361,6 +607,13 @@ export class PuzzleApp {
 
             }
         }
+
+            if (this.numPuzzles > 0) {
+                this.centerCamera()
+                this.mainMenu.close()
+            }
+            this.numPuzzles += 1
+
             this.initDragControls()
             this.render()
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -373,12 +626,24 @@ export class PuzzleApp {
 
     createPuzzle(svgData, texture) {
         this.puzzle = new Puzzle(svgData, texture)
-        this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
+        // this.camera.position.z = Math.max(this.puzzle.texture.image.width, this.puzzle.texture.image.height)
         const puzzlePieces = this.puzzle.createPieces()
         this.totalPieces = puzzlePieces.length
         puzzlePieces.forEach(piece => {
             this.scene.add(piece);
         })
+
+    }
+
+    toggleEffects() {
+        console.log('tog')
+        if (this.qualityLevel == 0) {
+            console.log('qual1')
+            this.qualityLevel = 1
+        } else {
+            console.log('qual0')
+            this.qualityLevel = 0
+        }
     }
 
         
@@ -559,9 +824,10 @@ export class PuzzleApp {
                 this.scene.children[i] instanceof PieceGroup) {
                 this.scene.children[i].dispose()
                 this.scene.remove(this.scene.children[i]);
-                } else if (this.scene.children[i] instanceof THREE.Mesh) {
-                    this.disposeMesh(this.scene.children[i])
-                    this.scene.remove(this.scene.children[i])
+                // } else if (this.scene.children[i] instanceof THREE.Mesh) {
+                //     this.disposeMesh(this.scene.children[i])
+                //     this.scene.remove(this.scene.children[i])
+                // }
                 }
         }
 
@@ -589,7 +855,7 @@ export class PuzzleApp {
         // this.outlinePass = null
         // this.puzzle = null
 
-              
+
     }
 
     disposeMesh(mesh) {
@@ -630,6 +896,7 @@ export class PuzzleApp {
       
 
     animate() {
+
         requestAnimationFrame(() => this.animate());
 
 
@@ -648,8 +915,21 @@ export class PuzzleApp {
 
         // this.backdrop.update()
 
-        
+        //Update particles
+        this.updateParticles()
     
+        // Time
+
+        // Initialize an array to store the first N frames and create the qualityLevel variable.
+        if(!this.frameTimes) {
+            this.frameTimes = [];
+        }
+
+        // Create previousTime variable if not exists
+        if (typeof this.previousTime === 'undefined') {
+            this.previousTime = performance.now();
+          }
+          
         // Calculate the time since the last frame and update elapsedTime
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.startTime) * 0.001; // Convert to seconds
@@ -659,7 +939,34 @@ export class PuzzleApp {
         this.tick(deltaTime);
 
         // Render
-        this.composer.render()
+        const frameTime = (currentTime - this.previousTime) * 0.001; // Convert to seconds
+
+        if (typeof this.qualityLevel == 'undefined') {
+            if (this.frameTimes.length <= 100) {
+    
+                this.frameTimes.push(frameTime);
+            }
+            this.qualityLevel;
+            if (this.frameTimes.length >= 75) {
+                const avgFrameTime = utils.removeOutliers(this.frameTimes, 10);
+
+                if (avgFrameTime < 0.015) {
+                    this.qualityLevel = 1 // good quality, composer enabled
+                } else {
+                    this.qualityLevel = 0 // bad quality, composer disabled
+
+                }
+            }    
+        }
+
+        // If hardware quality is high, render extra lights
+        if (this.qualityLevel == 1) {
+            this.composer.render()
+        }
+
+        // Update the previous time for the next frame
+        this.previousTime = currentTime;
+
 
       }
 
@@ -698,16 +1005,16 @@ export class PuzzleApp {
       }
                                     
 
-      centerCamera(smoothing = 0.4, sensitivity = 60) {
-        // if (this.dragActiveObj) {
-        //     this.camera.position.x = this.lerp(this.camera.position.x, this.dragActiveObj.position.x, smoothing);
-        //     this.camera.position.y = this.lerp(this.camera.position.y, this.dragActiveObj.position.y, smoothing);    
-        //     this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
-        //     this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
+      centerCamera() {
+        let newPos;
+        if (this.perspective) {
+            newPos = new THREE.Vector3(0, -1225, (1740))
+        } else {
+            newPos = new THREE.Vector3(0, 100, (1740))
+        }
+        utils.moveObjectToPosition(this.camera, newPos, 2000, false, true, 0.7)
 
-        // }
-        this.camera.position.x = this.dragActiveObj.position.x
-        this.camera.position.y = this.dragActiveObj.position.y
+
       }
       
       tick(deltaTime) {
@@ -808,7 +1115,6 @@ export class PuzzleApp {
 
     #onDrag(event) {
         this.isDragging = true;
-        this.render()
     }
 
     updateTextures(object) {
@@ -929,6 +1235,37 @@ export class PuzzleApp {
             source.start(0);    
         }
       }
+
+    // Confirming valid URLs for image submission
+    isValidImageURL(url, callback) {
+        let img = new Image();
+    
+        img.crossOrigin = "anonymous"; // Attempt to request CORS approval
+    
+        img.onload = function() {
+            let canvas = document.createElement("canvas");
+            canvas.width = this.naturalWidth; // or 'width' if you want a special/scaled size
+            canvas.height = this.naturalHeight; // or 'height' if you want a special/scaled size
+    
+            // Draw image to canvas
+            canvas.getContext('2d').drawImage(this, 0, 0, this.naturalWidth, this.naturalHeight);
+    
+            if (this.width < 300 || this.height < 300) {
+                callback(false, 'Image dimensions are smaller than 300x300');
+            } else {
+                callback(true, 'Image is valid and dimensions are larger than 300x300');
+            }
+        }
+    
+        img.onerror = function() {
+            // Here, we assume that an error might be due to CORS issues.
+            // However, keep in mind that this could also be due to the image not existing, the server being down, etc.
+            callback(false, 'Could not load image. This might be due to CORS policies or the image does not exist');
+        }
+    
+        img.src = url;
+    }
+        
           
 
     #onDragEnd(event) {
@@ -964,6 +1301,10 @@ export class PuzzleApp {
     }
 
     #onKeyDown(event) { // debug the right and left things, they're flipped
+        let textInput = document.getElementById('mm-text-input')
+        if (textInput == document.activeElement) {
+            return
+        }
         if (this.dragActiveObj) {
             console.log(event.keyCode)
 
@@ -988,6 +1329,7 @@ export class PuzzleApp {
                 this.mainMenu.modal.classList.remove("open");
             } else {
                 this.mainMenu.open()
+                this.mainMenu.resetView()
             }
             //this.html.getelementbyid.css = 'block' on and off
 
@@ -995,14 +1337,19 @@ export class PuzzleApp {
         if (event.keyCode == 16) {
             if (this.dragActiveObj) {
                 this.camera.position
-                let newPos = this.zoomCamera(0.1)
+                let newPos = this.zoomCamera(0.05)
                 utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
             }
         }
         if (event.keyCode == 67) {
             console.log(this.camera.position)
             if (this.puzzle) {
-                let newPos = new THREE.Vector3(0, 0, (this.puzzle.texture.image.width + this.puzzle.texture.image.height)* 1.3)
+                let newPos;
+                if (this.perspective) {
+                    newPos = new THREE.Vector3(0, -1225, (1740))
+                } else {
+                    newPos = new THREE.Vector3(0, 100, (1740))
+                }
                 utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
 
             }
@@ -1011,21 +1358,63 @@ export class PuzzleApp {
         if (event.keyCode == 88) {
             console.log(this.camera.position)
             if (this.puzzle) {
-                let newPos = new THREE.Vector3(0, 0, this.puzzle.texture.image.width + this.puzzle.texture.image.height)
+                let newPos;
+                if (this.perspective) {
+                    newPos = new THREE.Vector3(0, -1190, (1740)*0.8)
+                } else {
+                    newPos = new THREE.Vector3(0, -27, (1740)*0.8)
+                }
+
                 utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
 
             }
             console.log(this.camera.position)
         }
-        if (event.keyCode == 90) {
+        if (event.keyCode == 90 || event.keyCode == 83) { // z or s - s so the a-s-d experience is seamless
             console.log(this.camera.position)
             if (this.puzzle) {
-                let newPos = new THREE.Vector3(0, 0, (this.puzzle.texture.image.width + this.puzzle.texture.image.height)*0.7)
+                let newPos;
+                if (this.perspective) {
+                    newPos = new THREE.Vector3(0, -1150, (1740)*0.5)
+                } else {
+                    newPos = new THREE.Vector3(0, -205, (2300)*0.5)
+                }
                 utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
 
             }
             console.log(this.camera.position)
         }
+        if (event.keyCode == 65) { // a
+            console.log(this.camera.position)
+            if (this.puzzle) {
+                let newPos;
+                if (this.perspective) {
+                    newPos = new THREE.Vector3(-1000, -1150, (1740)*0.5)
+                } else {
+                    newPos = new THREE.Vector3(-1000, -205, (2300)*0.5)
+                }
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+
+            }
+            console.log(this.camera.position)
+        }
+        if (event.keyCode == 68) { // d
+            console.log(this.camera.position)
+            if (this.puzzle) {
+                let newPos;
+                if (this.perspective) {
+                    newPos = new THREE.Vector3(1000, -1150, (1740)*0.5)
+                } else {
+                    newPos = new THREE.Vector3(1000, -205, (2300)*0.5)
+                }
+                utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+
+            }
+            console.log(this.camera.position)
+        }
+
+
+
 
         if (event.keyCode == 48) {
             this.positionPiecesAndPieceGroups()
@@ -1035,7 +1424,26 @@ export class PuzzleApp {
             document.getElementById("backgroundVideo")
         }
         if (event.keyCode == 32) {
-            this.centerCamera()
+            event.preventDefault()
+            let newPos;
+            if (this.perspective) {
+                newPos = new THREE.Vector3(0, -1225, (1740))
+            } else {
+                newPos = new THREE.Vector3(0, 100, (1740))
+            }
+            utils.moveObjectToPosition(this.camera, newPos, 200, false, true)
+    }
+        if (event.keyCode == 40) {
+            // this.camera.rotation.set(0.7, 0, 0)
+            let newPos = new THREE.Vector3(0, -1150, (1740)*0.5)
+            utils.moveObjectToPosition(this.camera, newPos, 200, false, true, 0.7)
+            this.perspective = 1
+        }
+        if (event.keyCode == 38) {
+            // this.camera.rotation.set(0, 0, 0)
+            let newPos = new THREE.Vector3(0, -205, (2300)*0.5)
+            utils.moveObjectToPosition(this.camera, newPos, 200, false, true, 0)
+            this.perspective = 0
         }
 
     }
@@ -1075,13 +1483,32 @@ export class PuzzleApp {
     #onFormSubmit(event) {
         
         event.preventDefault()
-        console.log(event)
         const url = event.target.elements.url.value;
-        if (url) {
-            this.makeNewPuzzle(url)
-        }
+        this.isValidImageURL(url, (isValid, message) => {
+            if (isValid) {
+                let elements = document.querySelectorAll(".invalid-url");
+
+                // Iterate over elements and remove "shadowrealm" class
+                elements.forEach(function(element) {
+                    if (!element.classList.contains("shadowrealm")) {
+                        element.classList.add("shadowrealm");
+                    }
+                });
+                this.makeNewPuzzle(url);
+            } else {
+                // Show an error message
+                // Get all elements with class "invalid-url"
+                let elements = document.querySelectorAll(".invalid-url");
+
+                // Iterate over elements and remove "shadowrealm" class
+                elements.forEach(function(element) {
+                    element.classList.remove("shadowrealm");
+                });
+                console.error(message);
+            }
+        });
     }
-    
+            
     // Middle mouse handling
     #onMouseDown(event) {
         if (event.button === 1) {
@@ -1093,6 +1520,10 @@ export class PuzzleApp {
             this.lastMouseY = event.clientY;
       
         } 
+        if (!event.target.classList.contains("mm")) {
+            this.mainMenu.close()
+        }
+
 
         if (event.target.classList.contains("settings-main")) {
             this.mainMenu.toggleSettings();
@@ -1133,32 +1564,33 @@ export class PuzzleApp {
           
     #onMouseUp(event) {
         console.log(event.target)
-        if (event.target.classList.contains("chosen-image")) {
-            console.log(event.target.src)
-            // if (event.target.src == 'http://192.168.1.165:8080/assets/images/cd7b19abb5e64293.png') {
-                if (event.target.src == "http://192.168.1.165:8080/assets/images/3bae1b47186e726f.png"){
-                console.log('was')
-                this.makeNewPuzzle(event.target.src, "./geography/usaBest.svg")
-            } else {
-                this.makeNewPuzzle(event.target.src)
-            }
-        }
-        if (!event.target.classList.contains("mm")) {
-            this.mainMenu.close()
-        }
-
         if (event.button === 1) {
             // middle mouse button was released
             this.isMiddleButtonDown = false;
           }
+        if (event.target.classList.contains("chosen-image")) {
+            if (event.target.classList.contains("geography")) {
+            // if (event.target.src == 'http://192.168.1.165:8080/assets/images/cd7b19abb5e64293.png') {
+                if (event.target.src == "http://192.168.1.165:8080/assets/images/5055beaafc96e7f1.png"){
+                    this.makeNewPuzzle("./geography/img/northAmerica.png", "./geography/svg/northAmerica.svg")
+            } else if (event.target.src == "http://192.168.1.165:8080/assets/images/c9ad9d4270a10439.png") {
+                this.makeNewPuzzle("./geography/img/southAmerica.png", "./geography/svg/southAmerica.svg")
+            }
+        } else {
+            let fullSizeSrc = event.target.src.replace("previewMenuImages", "menuImages")
+            this.makeNewPuzzle(fullSizeSrc)
+
+        }
+
    
+        }
     }
 
     #onWheel(event) {
         if (this.mainMenu.appearance() == 0) {
             this.deltaCameraZ += event.deltaY;
             while (this.deltaCameraZ != 0) {
-                let newPos = this.camera.position.z + this.deltaCameraZ/10
+                let newPos = this.camera.position.z + this.deltaCameraZ/3
                 if (!(newPos > this.cameraZone[1]) && !(newPos < this.cameraZone[0])) {
                     this.camera.position.z = newPos
                 }
