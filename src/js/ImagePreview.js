@@ -1,4 +1,12 @@
+/**
+ * Represents the image preview of the puzzle.
+ * @class
+ */
 export class ImagePreview {
+  /**
+   * @constructor
+   * @param {string|object} imgReference - A string (file reference) or html object representation of an image.
+   */
     constructor(imgReference) {
         this.imgReference = imgReference
         this.imgContainer = document.getElementById('imagePreviewContainer')
@@ -7,6 +15,11 @@ export class ImagePreview {
         this.init()
     }
 
+    /**
+     * Initializes the image preview.
+     * 
+     * @method
+     */
     init() {
         this.setSource(this.imgReference)
         this.pinButton.addEventListener("click", () => {
@@ -21,9 +34,15 @@ export class ImagePreview {
         });
       }
     
+      /**
+       * Sets the source of the image object to the current puzzle image.
+       * 
+       * @method
+       * @param {string|object} img - A string (file reference) or html object representation of an image.
+       * @return {void}
+       */
     setSource(img) {
         this.imgReference = img
-        console.log(this)
         if (typeof this.imgReference === "object") {
             console.log('Object passed')
         } else if (typeof this.imgReference == "string") {
@@ -34,22 +53,54 @@ export class ImagePreview {
 
     }
 
+    /**
+     * Makes the image preview non-interactive.
+     * 
+     * @method
+     * @return {void}
+     */
     setNonInteractive() {
         this.imgContainer.classList.add("no-interaction")
     }
 
+    /**
+     * Makes the image preview interactive.
+     * 
+     * @method
+     * @return {void}
+     */
     setInteractive() {
         this.imgContainer.classList.remove("no-interaction")
     }
 
+    /**
+     * Deprecated function to update the image reference to the newly generated puzzle image.
+     * 
+     * @method
+     * @param {string|object} newImgReference - A string (file reference) or html object representation of an image.
+     * @return {void}
+     */
     updateImageReference(newImgReference) {
         this.imgReference = newImgReference;
-        this.setSource();
-      }
+        this.setSource(this.imgReference);
+    }
     
+    /**
+     * Hides the image preview from view.
+     * 
+     * @method
+     * @return {void}
+     */
     hide() {
       this.imgContainer.classList.add("shadowrealm")
     }
+
+    /**
+     * Makes the image preview visible.
+     * 
+     * @method
+     * @return {void}
+     */
     show() {
       this.imgContainer.classList.remove("shadowrealm")
     }

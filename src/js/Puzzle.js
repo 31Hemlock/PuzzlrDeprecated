@@ -7,14 +7,30 @@ import {
 import { PuzzleApp } from './PuzzleApp.js';
 import { rotationValues } from './constants'
 
+/**
+ * Contains the properties of the puzzle as a whole.
+ * @class
+ */
 export class Puzzle{
-    constructor(svg, texture, extrudeDepth = 30) { // consider adding thumbnail/puzzle dims
+  /**
+   * @constructor
+   * @param {string} svg - Data from an .svg file.
+   * @param {THREE.Texture} texture - Image data as represented by THREE's TextureLoader class.
+   * @param {number} [extrudeDepth=30] - Represents physical depth of a piece.
+   */
+    constructor(svg, texture, extrudeDepth = 30) {
         this.extrudeDepth = extrudeDepth
         this.svg = svg
         this.svgLoader = new SVGLoader()
-        this.texture = texture // an instance of objectTexture or stringTexture from main code
+        this.texture = texture
     }
         
+    /**
+     * Deprecated function for returning the mesh representing the thumbnail image.
+     * 
+     * @method
+     * @return {THREE.Mesh}
+     */
     getThumbMesh() {
       if (this.texture) {
         const thumbMaterial = new THREE.MeshBasicMaterial( {
@@ -30,6 +46,12 @@ export class Puzzle{
       }
     }
 
+    /**
+     * Uses a loop to create and initialize all pieces of the puzzle.
+     * 
+     * @method
+     * @return {void}
+     */
     createPieces() {
       let pieceArray = []
       let svgData = this.svgLoader.parse(this.svg)
@@ -90,6 +112,11 @@ export class Puzzle{
       if (pieceArray) {return pieceArray} else {return null}
     }
 
+    /**
+     * Deprecated function for applying a change to the position of a shape.
+     * 
+     * @method
+     */
     applyMatrixToShape(shape, matrix) {
       shape.getPoints().forEach((point) => {
         let vector3 = new THREE.Vector3(point.x, point.y, 0);
@@ -99,6 +126,13 @@ export class Puzzle{
     }
             
 
+    /**
+     * Extracts and returns the unique vertices from a SVG path object.
+     * 
+     * @method
+     * @param {object} shape - An object representing an SVG path.
+     * @return {array}
+     */
     #getObjectVertices (shape) {
       let exitArray = []
           for (let i in shape.curves) {
@@ -122,6 +156,12 @@ export class Puzzle{
   
     }
 
+    /**
+     * Disposes of this puzzle object entirely.
+     * 
+     * @method
+     * @return {void}
+     */
     dispose() {
           // dispose of the texture
           if (this.texture) {

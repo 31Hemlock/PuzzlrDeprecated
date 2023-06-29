@@ -8,8 +8,18 @@ import { rotationValues } from './constants'
 import { rotateAny } from './utils'
 
 
-
+/**
+ * Represents a single Piece object.
+ * @class
+ */
 export class Piece extends THREE.Mesh {
+    /**
+     * @constructor
+     * @param {THREE.ExtrudeGeometry} geometry - Represents the Piece's bounds.
+     * @param {THREE.MeshBasicMaterial} material - Represents how the Piece is textured.
+     * @param {array} vectors - Represents the initial vertices of the Piece.
+     * @param {number} num - Represents the number of Piece being made.
+     */
     constructor(geometry, material, vectors, num) {
       super(geometry, material);
       this.initVerts = vectors
@@ -22,6 +32,13 @@ export class Piece extends THREE.Mesh {
 
     }
 
+    /**
+     * Initializes the object. Creates normalized initial vertices,
+     * sets the current vertex positions, and creates the piece dimension attributes.
+     * 
+     * @method
+     * @return {void}
+     */
     init() {
       this.setNormalizedInitVerts(this.initVerts).then(() => {
         this.setCurVerts()
@@ -29,7 +46,12 @@ export class Piece extends THREE.Mesh {
       })
     }
 
-
+    /**
+     * Creates the piece dimension attributes.
+     * 
+     * @async
+     * @return {void}
+     */
     async setDims() {
       const meshBoundingBox = new THREE.Box3().setFromObject(this);
 
@@ -42,6 +64,12 @@ export class Piece extends THREE.Mesh {
 
     }
 
+    /**
+     * Entirely disposes of a Piece object and all its component parts.
+     * 
+     * @method
+     * @return {void}
+     */
     dispose() {
       this.removeEventListener('mousedown');
       // Dispose geometry
@@ -98,8 +126,13 @@ export class Piece extends THREE.Mesh {
       }
     }
   
-  
-
+    /**
+     * Updates a Piece object's current vertex locations and checks
+     * whether a group should be formed.
+     * 
+     * @param {boolean} formGroup - Whether a group should be allowed to be formed or not.
+     * @return {void}
+     */
     moved(formGroup = true) {   
       this.setCurVerts().then(() => {
         if (formGroup) {
@@ -108,6 +141,13 @@ export class Piece extends THREE.Mesh {
       })
     }
 
+    /**
+     * Debug function for marking the location of vertices.
+     * 
+     * @method
+     * @param {array} verts - Array of vertices of the object to mark.
+     * @return {void}
+     */
     markVerts(verts) {
       for (let i=0;i<verts.length;i++) {
           let vert = new VertMarker(verts[i])
@@ -116,6 +156,13 @@ export class Piece extends THREE.Mesh {
       let main = new PuzzleApp()
       main.render()
     }
+    
+    /**
+     * Debug function for removing the spheres representing piece vertices.
+     * 
+     * @method
+     * @return {void}
+     */
     destroyVerts() {
       let main = new PuzzleApp()
       let scene = main.scene
@@ -128,23 +175,25 @@ export class Piece extends THREE.Mesh {
       }
     }
 
-
+    /**
+     * Rotates this piece in a certain direction (left or right).
+     * 
+     * @method
+     * @param {string} direction - Direction of rotation (left or right).
+     * @return {void}
+     */
     rotate(direction) {
       rotateAny(this, direction)
     }
-      
   
-
-    // set this.positions to an array of objects containing original vertices
-    // and their cur positions in 3d space according to rotations/translations.
-    // this.initVerts = [{x: 57, y:13}, {x:92, y:93}, ...]
-    // this.curVerts = [{x: 102, y: 34}, ...]
-    // when forming a group, if this.currentPos and this.intialPos is identical, just delete the vertex.
-    // this leaves us with only outside-facing vertices that can be paired. 
-    // only question is whether just the vertex values are enough. last time created a .name property
-    // because they were not enough. if this is the case, need to handle groups differently, and thus
-    // need to handle pieces differently.
-
+    /**
+     * Normalizes the initial vertices of the piece to a value within [-0.5, 0.5]
+     * and places them within the normalizedInitVerts object attribute.
+     * 
+     * @method
+     * @param {array} verts - The initial vertices of the piece.
+     * @return {Promise} - Resolves when the vertices are normalized and set.
+     */
     setNormalizedInitVerts(verts) {
       return new Promise((resolve) => {
 
@@ -168,6 +217,13 @@ export class Piece extends THREE.Mesh {
 
     }
 
+    /**
+     * Sets the current vertices of the object and places them within the
+     * curVerts object attribute.
+     * 
+     * @method
+     * @return {Promise} - Resolves when the vertices are set.
+     */
     setCurVerts() {
       return new Promise((resolve) => {
 
@@ -192,6 +248,13 @@ export class Piece extends THREE.Mesh {
       })
       }
 
+      /**
+       * Checks whether a group should be formed, and if so, forms the group by
+       * creating a new PieceGroup object from the requisite pieces.
+       * 
+       * @async
+       * @return {boolean}
+       */
       async checkFormGroup() {
         let main = new PuzzleApp();
       
@@ -206,16 +269,15 @@ export class Piece extends THREE.Mesh {
               return matchingOtherVertex !== undefined ? vertex : undefined;
             });
             if (matchingVertex) { 
-              const TOLERANCE = 0.0001; // adjust this as needed
+              const TOLERANCE = 0.0001; // Adjust to change required distance between pieces to form a group
               let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => Math.abs(x - matchingVertex.x) < TOLERANCE && Math.abs(y - matchingVertex.y) < TOLERANCE);
             let offset = new THREE.Vector3().subVectors(
                 this.curVerts[this.initVerts.indexOf(matchingVertex)],
                 otherPiece.curVerts[otherPieceMatchingVertexIndex]
               );
                 if (Math.abs(offset.x) < this.connectionDistance[0] && Math.abs(offset.y) < this.connectionDistance[1]) {
-                  console.log('group is gonna get formed now, from the piece perspective')
                 this.position.sub(offset);
-                await this.setCurVerts(); // Use 'await' to ensure completion before moving on
+                await this.setCurVerts();
                 let newGroup = new PieceGroup(this, otherPiece);
                 newGroup.init();
                 main.render();
@@ -226,7 +288,7 @@ export class Piece extends THREE.Mesh {
           return false;
         };
         for (let otherPiece of main.scene.children) {
-          const groupCreated = await processPiece(otherPiece); // Use 'await' to ensure completion before the next iteration
+          const groupCreated = await processPiece(otherPiece);
           if (groupCreated) break;
         }
       }

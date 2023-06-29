@@ -1,11 +1,11 @@
-import Voronoi from './rhill-voronoi-core.js'; // Update the import path to the Voronoi library you're using
+import Voronoi from './rhill-voronoi-core.js';
 
 export default class VoronoiRelaxedSvg {
 	constructor(wide, high) {
         this.voronoi = new Voronoi()
         this.diagram = null
         this.margin = 0.1
-        this.canvas = {width: wide, height: high}; // You can set the default dimensions here
+        this.canvas = {width: wide, height: high};
         this.bbox = {xl:0,xr:wide,yt:0,yb:high}
         this.sites = []
         this.timeoutDelay = 2

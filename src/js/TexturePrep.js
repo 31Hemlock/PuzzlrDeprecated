@@ -1,6 +1,12 @@
 import * as THREE from 'three'
 
 export class TexturePrep{
+    /**
+     * @constructor
+     * @param {string|object} textureReference - The target image represented as a string or object.
+     * @param {number} [maxWidth=2000] - The maximum width to which a texture can be resized.
+     * @param {number} [maxHeight=1300] - The maximum height to which a texture can be resized.
+     */
     constructor(textureReference, maxWidth = 2000, maxHeight = 1300) { // default values are set here, can be overridden
         this.textureReference = textureReference // an instance of objectTexture or stringTexture from main code
         this.textureLoader = new THREE.TextureLoader()
@@ -8,6 +14,12 @@ export class TexturePrep{
         this.maxHeight = maxHeight
     }
 
+    /**
+     * Loads the texture.
+     * 
+     * @method
+     * @return {Promise}
+     */
     init() {
         return new Promise((resolve, reject) => {
             if (typeof this.textureReference === "object") {
@@ -31,6 +43,13 @@ export class TexturePrep{
         
     }
 
+    /**
+     * Resizes the loaded texture.
+     * 
+     * @method
+     * @param {THREE.Texture} texture - A texture as represented by three.js.
+     * @return {THREE.Texture}
+     */
     resizeTexture(texture) {
         let canvas = document.createElement('canvas');
         let context = canvas.getContext('2d');

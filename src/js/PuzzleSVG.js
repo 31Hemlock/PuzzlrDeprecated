@@ -1,21 +1,40 @@
 import { getRandBetween } from './utils.js';
+
+/**
+ * Creates the svg file that will be used to create the puzzle in the "divided squares" algorithm.
+ * @class
+ */
 export class PuzzleSVG {
+    /**
+     * @constructor
+     * @param {number} width - The width of the puzzle.
+     * @param {number} height - The height of the puzzle.
+     * @param {number} [wideReps=6] - The number of horizontal divisions of the puzzle.
+     * @param {number} [highReps=10] - The number of vertical divisions of the puzzle. 
+     */
     constructor(width, height, wideReps = 6, highReps = 10) {
         this.width = width;
         this.height = height;
         this.wideReps = wideReps;
         this.highReps = highReps;
     }
+
+    /**
+     * Creates the svg string that will represent the shape of the puzzle.
+     * 
+     * @method
+     * @returns {string|int}
+     */
     create() {
         const canvas = SVG().addTo('body').size(this.width, this.height);
-        // Step 3: calculate the dimensions of each piece
+        // Calculate the dimensions of each piece
         this.pieceWidth = this.width / this.wideReps;
         this.pieceHeight = this.height / this.highReps;
         let retStringSVG = `
                 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs" width="` + this.width + `" height="` + this.height + `">
         `
         // retStringSVG += `<g transform="scale(1, -1)">`
-        // Step 4: create the grid of x pieces
+        // Create the grid of x pieces
         for (let i = 0; i < this.highReps; i++) { // y changes
             for (let j = 0; j < this.wideReps; j++) { // x changes
                 const boxZeroX = j * this.pieceWidth
@@ -53,6 +72,19 @@ export class PuzzleSVG {
         // retStringSVG += "</g>"
         if (retStringSVG.includes("path")) {return retStringSVG} else {return 0}
     }
+
+    /**
+     * Recursive function to generate new cut lines until the puzzle is complete.
+     * 
+     * @method
+     * @param {number} startX - The piece's horizontal location.
+     * @param {number} startY - The piece's vertical location.
+     * @param {number} boxZeroX - The leftmost location that the piece will inhabit.
+     * @param {number} boxZeroY - The rightmost location that the piece will inhabit.
+     * @param {number} counter - The current iteration of the function.
+     * @param {array} curLine - Array representing the current line being generated.
+     * @returns {void}
+     */
     #genLine(startX, startY, boxZeroX, boxZeroY, counter, curLine) {
         if (counter == 1) { // && Math.random() < 0.5
             const curLineLast = curLine[curLine.length - 1]

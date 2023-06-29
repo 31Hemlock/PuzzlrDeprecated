@@ -7,15 +7,28 @@ import { rotationValues } from './constants'
 import { rotateAny } from './utils.js'
 import * as TWEEN from '@tweenjs/tween.js';
 
-
+/**
+ * Represents a group of Piece objects.
+ * @class
+ */
 export class PieceGroup extends THREE.Group {
+    /**
+     * @constructor
+     * @param {array} pieces - An array of Piece objects.
+     */
     constructor(...pieces) {
-        super()
-        this.pieces = pieces
-        this.normalizedInitVerts = []
-        this.connectionDistance = [40, 40]
+      super()
+      this.pieces = pieces
+      this.normalizedInitVerts = []
+      this.connectionDistance = [40, 40]
     }
 
+    /**
+     * Initializes the object. Locates its vertices, composes its group object, and plays the success sound.
+     * 
+     * @async
+     * @return {Promise<void>} Resolves when the object has been completely initialized.
+     */
     async init() {
         await this.createVerts()
         await this.createCurVerts()
@@ -25,11 +38,17 @@ export class PieceGroup extends THREE.Group {
 
         await this.setStartingPosition()
         await this.setDims()
-        await this.playGroupSound()
+        await this.playGroupSuccess()
 
-            }
+      }
 
 
+    /**
+     * Creates a bounding box for the new group of objects.
+     * 
+     * @async
+     * @return {void}
+     */
     async setDims() {
       const mergedBoundingBox = new THREE.Box3();
 
@@ -51,16 +70,18 @@ export class PieceGroup extends THREE.Group {
 
     }
 
-
-    playGroupSound() {
-      console.log('group sound')
+    /**
+     * Plays a sound and an animation determined by the size of the group relative to the total number of pieces in the puzzle.
+     * 
+     * @method
+     * @return {void}
+     */
+    playGroupSuccess() {
       // get total number of puzzle pieces, get number of pieces passed as args to this function, use ratio to play sound
       const main = new PuzzleApp()
       let currentPieces = this.children.length
       const pieceRatio = currentPieces / main.totalPieces
-      console.log(pieceRatio)
       if (main.mainMenu.settingSound.checked) {
-        console.log(pieceRatio)
         switch(true) {
           case pieceRatio == 1:
             main.playSound(7)
@@ -96,6 +117,13 @@ export class PieceGroup extends THREE.Group {
 
     }
 
+    /**
+     * Sums the number of pieces within all pieces and pieceGroups within the argument [pieces] array.
+     * 
+     * @method
+     * @param {array} pieces - All Piece and PieceGroup argument objects in an array.
+     * @return {number}
+     */
     countPieces(...pieces) {
       let count = 0;
       pieces.flat().forEach((piece) => {
@@ -109,6 +137,12 @@ export class PieceGroup extends THREE.Group {
     }
     
 
+    /**
+     * Entirely removes a Piece or PieceGroup object from the scene.
+     * 
+     * @method
+     * @return {void}
+     */
     dispose() {
       // Dispose of each piece in the group
       for (const child of this.children) {
@@ -127,9 +161,12 @@ export class PieceGroup extends THREE.Group {
       this.pieces.length = 0;
     }
   
-
-    // Add extra functionality to the Piece object here
-
+    /**
+     * Sets the position of the new PieceGroup object based on the objects fed to its constructor.
+     * 
+     * @async
+     * @return {void}
+     */
     async setStartingPosition() {
       this.lowestXVector = findVector('min', 'x', this.curVerts)
       this.lowestYVector = findVector('min', 'y', this.curVerts)
@@ -193,6 +230,12 @@ export class PieceGroup extends THREE.Group {
       })
     }
 
+    /**
+     * Decomposes all elements of the argument pieces array and forms them into this new PieceGroup object.
+     * 
+     * @async
+     * @return {void}
+     */
     async decomposeAndRecompose() {
       // Decompose both groups, then add all elements to this object.
       // this.rotation.copy(this.pieces[0].rotation)
@@ -217,8 +260,15 @@ export class PieceGroup extends THREE.Group {
       }
       let main = new PuzzleApp()
       main.scene.add(this)
-  }  
+    }  
 
+    /**
+     * Moves the initial vertices of the component pieces to a new, 
+     * combined array of initial vertices of the new PieceGroup object.
+     * 
+     * @async
+     * @return {void}
+     */
     async createVerts() {
         let combined = []
         for (let piece of this.pieces) {
@@ -230,13 +280,17 @@ export class PieceGroup extends THREE.Group {
         
         combined = combined.flat()
 
-        let combinedSet = [...new Set(combined)] // consider removing duplicates entirely rather than collapsing here
+        let combinedSet = [...new Set(combined)]
         this.initVerts = Array.from(combinedSet)
         // combine all arrays into one
 
 
     }
 
+    /**
+     * Moves the current vertices of the component pieces to at new,
+     * combined array of current vertices of the new PieceGroup object.
+     */
     async createCurVerts() {
         let combined = []
         for (let piece of this.pieces) {
@@ -245,32 +299,23 @@ export class PieceGroup extends THREE.Group {
         } 
         combined = combined.flat()
 
-        let combinedSet = [...new Set(combined)] // consider removing duplicates entirely rather than collapsing here
+        let combinedSet = [...new Set(combined)]
         this.curVerts = Array.from(combinedSet)
-        // combine all arrays into one
     }
     
+    /**
+     * Normalizes the initial vertices of this new PieceGroup to be between -0.5 and 0.5,
+     * and stores them in the variable this.normalizedInitVerts.
+     * 
+     * @async
+     * @param {array} verts - Array of initial vertices of the component pieces.
+     * @return {void}
+     */
     async setNormalizedInitVerts(verts) {
         let lowestXVector = findVector('min', 'x', verts)
         let lowestYVector = findVector('min', 'y', verts)
         let highestXVector = findVector('max', 'x', verts)
         let highestYVector = findVector('max', 'y', verts)
-
-        // this.lowCol = min(this.cols)
-        // this.lowRow = min(this.rows)
-        // this.highCol = max(this.cols)
-        // this.highRow = max(this.rows)
-  
-        // Find the difference between our lowest x,y values and the floor values of where our piece can spawn
-        // let realWidthOfPiece = lowestXVector -  (lowCol * this.width)
-        // let realHeightOfPiece = lowestYVector - (lowRow * this.height)
-  
-        // Bottom end of our bound is bottom end of where piece can spawn + the lowest value from an actual point in the piece.
-        // Top end is just the default spawn location of our piece +1 row/column.
-  
-        // this.xInitBounds = [(lowCol * this.width) + realWidthOfPiece, (highCol + 1) * this.width] // need to use width of a piece instead of this.width
-        // this.yInitBounds = [(lowRow * this.height) + realHeightOfPiece, (highRow + 1) * this.height] // change to height of piece too
-  
         this.xInitBounds = [lowestXVector, highestXVector]
         this.yInitBounds = [lowestYVector, highestYVector]
         
@@ -283,30 +328,59 @@ export class PieceGroup extends THREE.Group {
         }
       }
 
-      markVerts(verts) {
-        for (let i=0;i<verts.length;i++) {
-            let vert = new VertMarker(verts[i])
-            vert.init()
-        }
-        let vert = new VertMarker({x: 0, y: 0})
-        vert.init()
-        let main = new PuzzleApp()
-        main.render()
+    /**
+     * Debug function for marking the locations of the initial vertices with 3d spheres.
+     * 
+     * @method
+     * @param {array} verts - Array of vertices of the component pieces.
+     * @return {void}
+     */
+    markVerts(verts) {
+      for (let i=0;i<verts.length;i++) {
+          let vert = new VertMarker(verts[i])
+          vert.init()
       }
+      let vert = new VertMarker({x: 0, y: 0})
+      vert.init()
+      let main = new PuzzleApp()
+      main.render()
+    }
   
+    /**
+     * Updates the vertices of the PieceGroup object when it moves,
+     * then checks if a new group should be formed. 
+     * 
+     * @method
+     * @return {void}
+     */
     moved() {
         this.setCurVerts().then(() => {
             let main = new PuzzleApp()
-            console.log(main.scene)
             this.checkFormGroup()
             main.render()
         })
     }
 
+    /**
+     * Rotates this object in a specified direction.
+     * 
+     * @method
+     * @param {string} direction - string with value "left" or "right" specifying the direction of rotation.
+     * @return {void}
+     */
     rotate(direction) {
       rotateAny(this, direction)  
     }
 
+    /**
+     * Animates this piece when the group is formed.
+     * Grows the piece and applies a glow effect.
+     * 
+     * @method
+     * @param {string} color - The color to set, as a hexadecimal string (e.g., '#0000ff' for blue).
+     * @param {number} strength - The size of the outline of the newly formed group, currently set between 1 and 7.
+     * @return {void}
+     */
     pairAnimation(color, strength) {
       let main = new PuzzleApp();
       main.outlinePassSuccess.selectedObjects = [this];
@@ -322,8 +396,6 @@ export class PieceGroup extends THREE.Group {
       let midValue = { edgeStrength: strength, scale: 1.02 };
       let toValue = { edgeStrength: 0, scale: 1 };
       main.outlinePassSuccess.visibleEdgeColor.set(glowColor);
-      console.log(main.outlinePassSuccess)
-      console.log(glowColor)
       this.fadeInTween = new TWEEN.Tween(fromValue)
         .to(midValue, 400) // Duration of 500 milliseconds for fadeIn
         .easing(TWEEN.Easing.Cubic.InOut)
@@ -351,7 +423,13 @@ export class PieceGroup extends THREE.Group {
       this.fadeInTween.start();
     }
 
-
+    /**
+     * Checks whether this group is a completed puzzle,
+     * and plays a winning animation if so. Opens the menu after inactivity.
+     * 
+     * @method
+     * @return {void}
+     */
     winAnimation() {
       let main = new PuzzleApp();
       main.outlinePassSuccess.selectedObjects = [this];
@@ -393,23 +471,6 @@ export class PieceGroup extends THREE.Group {
         this.scale.set(1, 1, 1);
       });
 
-      // this.rotateTween = new TWEEN.Tween(firstRotate)
-      //   .to(lastRotate, 1000) // Duration of 500 milliseconds for fadeOut
-      //   .easing(TWEEN.Easing.Quadratic.Out)
-      //   .onUpdate(() => {
-      //     for (let child of this.children) {
-      //       child.rotation.x = firstRotate.rotation;
-      //       child.rotation.y = firstRotate.rotation;
-
-      //     }
-          
-      //   })
-      //   .onComplete(() => {
-      //     // Clear selectedObjects after the animation is complete
-      //     // main.outlinePassSuccess.selectedObjects = [];
-      //     // main.outlinePassSuccess.edgeStrength = main.successEdgeStrength;
-      //     // this.scale.set(1, 1, 1);
-      //   });
     
       // Stop the ongoing animation if a new group is formed
       // this.fadeInTween.chain(this.rotateTween);
@@ -429,7 +490,12 @@ export class PieceGroup extends THREE.Group {
           }
       }
       
-      function resetTimer() {
+      function resetTimer(event) {
+          if (event.keyCode == 27) { // Remove the timer if escape is pressed
+            clearTimeout(inactivityTimer)
+            isTimerRunning = false;
+            
+          }
           // If the timer is running, clear it and start a new one
           if (isTimerRunning) {
               clearTimeout(inactivityTimer);
@@ -441,20 +507,22 @@ export class PieceGroup extends THREE.Group {
       }
       
       // Attach event listeners to the window to listen for activity
-      window.addEventListener('keydown', resetTimer);
+      window.addEventListener('keydown', resetTimer.bind(this));
       window.addEventListener('wheel', resetTimer);
       
-      // Start the timer at some point
-      // For example, after a button is clicked:
       startTimer()
-
-      
       // this.rotateTween.start()
 
     }
 
+
+    /**
+     * Plays a rotating animation for all pieces within this PieceGroup.
+     * 
+     * @method
+     * @return {void}
+     */
     danceAllPieces() {
-      console.log('dance')
       let largestDistance = -Infinity;
       let referencePoint;
     
@@ -469,12 +537,10 @@ export class PieceGroup extends THREE.Group {
       }
     
       const sortedChildren = [];
-      console.log(this.children)
       for (let child of this.children) {
         const childPos = new THREE.Vector2(child.position.x, child.position.y);
         const distance = childPos.distanceTo(referencePoint);
         const distanceChildPair = { distance, child };
-        console.log(distanceChildPair)
         let index = sortedChildren.findIndex(pair => pair.distance < distance);
         if (index === -1) {
           sortedChildren.push(distanceChildPair);
@@ -482,34 +548,45 @@ export class PieceGroup extends THREE.Group {
           sortedChildren.splice(index, 0, distanceChildPair);
         }
       }
-      console.log(sortedChildren)
       // Extract only children from the sorted array (removing distance)
       const childrenSorted = sortedChildren.map(pair => pair.child);
-      console.log(childrenSorted)
       childrenSorted.forEach((child, index) => {
         const delay = index * 25; // 0.1 second stagger
         this.animateChild(child, delay);
       });
     }
         
+    /**
+     * Plays a rotating animation for one child Piece object.
+     * 
+     * @method
+     * @param {Piece} child - One of the component Piece objects of our PieceGroup.
+     * @param {number} delay - An amount of time in milliseconds to delay the animation.
+     * @return {void}
+     */
     animateChild(child, delay) {
-      console.log('alors')
       let firstRotate = {rotation: 0};
       let lastRotate = {rotation: 2 * Math.PI};
     
       this.objAnimTween = new TWEEN.Tween(firstRotate)
-        .to(lastRotate, 1700) // Customize duration (1000ms = 1 second)
+        .to(lastRotate, 1700) // 1700 ms
         .delay(delay)
-        .easing(TWEEN.Easing.Quadratic.Out) // Customize easing function
+        .easing(TWEEN.Easing.Quadratic.Out)
         .onUpdate(() => {
           // Update the child's rotation in the scene
-          // child.rotation.x = firstRotate.rotation; // You should set the value of the rotation property instead of the whole object
-          child.rotation.y = firstRotate.rotation; // You should set the value of the rotation property instead of the whole object
+          // child.rotation.x = firstRotate.rotation;
+          child.rotation.y = firstRotate.rotation;
         })
         .start();
     }
-        
 
+    /**
+     * Sets the current vertices of the newly formed PieceGroup object
+     * based on its current position and initial vertices.
+     * 
+     * @async
+     * @return {Promise}
+     */
     async setCurVerts() {
         return new Promise((resolve) => {
   
@@ -530,48 +607,53 @@ export class PieceGroup extends THREE.Group {
             this.curVerts.push(newVert) 
           }
           resolve();
-        })
-        }
+      })
+    }
         
-        async checkFormGroup() {
-          let main = new PuzzleApp();
-        
-          const processPiece = async (otherPiece) => {
-            if (
-              (otherPiece instanceof Piece || otherPiece instanceof PieceGroup) &&
-              otherPiece !== this &&
-              Math.abs(otherPiece.rotation.z - this.rotation.z) < Number.EPSILON
-            ) {
-              let matchingVertex = this.initVerts.find((vertex) => {
-                let matchingOtherVertex = otherPiece.initVerts.find(({ x: otherX, y: otherY }) => vertex.x === otherX && vertex.y === otherY);
-                return matchingOtherVertex !== undefined ? vertex : undefined;
-              });
-              if (matchingVertex) {
-                console.log(matchingVertex)
-                const TOLERANCE = 0.01; // adjust this as needed
-                let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => Math.abs(x - matchingVertex.x) < TOLERANCE && Math.abs(y - matchingVertex.y) < TOLERANCE);
-                let offset = new THREE.Vector3().subVectors(
-                this.curVerts[this.initVerts.indexOf(matchingVertex)],
-                otherPiece.curVerts[otherPieceMatchingVertexIndex]
-                );
-                  if (Math.abs(offset.x) < this.connectionDistance[0] && Math.abs(offset.y) < this.connectionDistance[1]) {
-                    console.log('New group is gonna get formed now.')
-                  this.position.sub(offset);
-                  await this.setCurVerts(); // Use 'await' to ensure completion before moving on
-                  let newGroup = new PieceGroup(this, otherPiece);
-                  newGroup.init();
-                  main.render();
-                  return true; // Return true when a group is created
-                }
-              }
+    /**
+     * Checks whether a group should be formed, and if so, forms the group by
+     * creating a new PieceGroup object from the requisite pieces.
+     * 
+     * @async
+     * @return {boolean}
+     */
+    async checkFormGroup() {
+      let main = new PuzzleApp();
+    
+      const processPiece = async (otherPiece) => {
+        if (
+          (otherPiece instanceof Piece || otherPiece instanceof PieceGroup) &&
+          otherPiece !== this &&
+          Math.abs(otherPiece.rotation.z - this.rotation.z) < Number.EPSILON
+        ) {
+          let matchingVertex = this.initVerts.find((vertex) => {
+            let matchingOtherVertex = otherPiece.initVerts.find(({ x: otherX, y: otherY }) => vertex.x === otherX && vertex.y === otherY);
+            return matchingOtherVertex !== undefined ? vertex : undefined;
+          });
+          if (matchingVertex) {
+            const TOLERANCE = 0.01; // adjust this as needed
+            let otherPieceMatchingVertexIndex = otherPiece.initVerts.findIndex(({ x, y }) => Math.abs(x - matchingVertex.x) < TOLERANCE && Math.abs(y - matchingVertex.y) < TOLERANCE);
+            let offset = new THREE.Vector3().subVectors(
+            this.curVerts[this.initVerts.indexOf(matchingVertex)],
+            otherPiece.curVerts[otherPieceMatchingVertexIndex]
+            );
+              if (Math.abs(offset.x) < this.connectionDistance[0] && Math.abs(offset.y) < this.connectionDistance[1]) {
+              this.position.sub(offset);
+              await this.setCurVerts(); // Use 'await' to ensure completion before moving on
+              let newGroup = new PieceGroup(this, otherPiece);
+              newGroup.init();
+              main.render();
+              return true; // Return true when a group is created
             }
-            return false;
-          };
-        
-          for (let otherPiece of main.scene.children) {
-            const groupCreated = await processPiece(otherPiece); // Use 'await' to ensure completion before the next iteration
-            if (groupCreated) break;
           }
         }
+        return false;
+      };
+    
+      for (let otherPiece of main.scene.children) {
+        const groupCreated = await processPiece(otherPiece); // Use 'await' to ensure completion before the next iteration
+        if (groupCreated) break;
+      }
+    }
     }
   

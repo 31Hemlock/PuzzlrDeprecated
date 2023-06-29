@@ -1,7 +1,14 @@
 import * as THREE from 'three'
 
-
+/**
+ * Deprecated, unfinished class for creating interesting background content.
+ * @class
+ */
 export class Backdrop {
+  /**
+   * @constructor
+   * @param {THREE.Scene} scene - The main scene in my application.
+   */
     constructor(scene) {
         this.scene = scene;
         // this.scene.background = new THREE.Color(0xFFFF00)
@@ -9,6 +16,12 @@ export class Backdrop {
         this.movingMeshes.forEach(mesh => this.scene.add(mesh));
     }
   
+    /**
+     * This function would create the moving stars, if it was finished. 
+     * 
+     * @method
+     * @return {array}
+     */
     createMovingMeshes() {
       // Create an array of moving meshes
       const movingMeshes = [];
@@ -24,6 +37,12 @@ export class Backdrop {
       return movingMeshes;
     }
   
+    /**
+     * This function updates the rotation of each mesh in the array.
+     * 
+     * @method
+     * @return {void}
+     */
     update() {
       // Animate the moving meshes
       this.movingMeshes.forEach(mesh => {

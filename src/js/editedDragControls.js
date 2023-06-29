@@ -28,8 +28,6 @@ class DragControls extends EventDispatcher {
 
 		const _intersections = [];
 
-		//
-
 		const scope = this;
 
 		function activate() {

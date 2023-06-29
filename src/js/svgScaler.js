@@ -1,4 +1,14 @@
+/**
+ * Scales an .svg object to the desired width and height.
+ * @class
+ */
 export default class svgScaler {
+  /**
+   * @constructor
+   * @param {number} tarWidth - Desired width of the .svg object.
+   * @param {number} tarHeight - Desired height of the .svg object.
+   * @param {string} svgString - The svg object itself, represented as a string.
+   */
   constructor(tarWidth, tarHeight, svgString) {
     this.tarWidth = tarWidth;
     this.tarHeight = tarHeight;
@@ -6,6 +16,12 @@ export default class svgScaler {
     this.retStringSVG = '';
   }
 
+  /**
+   * Initializes the scaling of the svg element.
+   * 
+   * @async
+   * @return {void}
+   */
   async init() {
     const parser = new DOMParser();
     let svgDoc = parser.parseFromString(this.svgString, 'image/svg+xml');
@@ -45,6 +61,15 @@ export default class svgScaler {
     this.retStringSVG = serializer.serializeToString(svgElement);
   }
 
+  /**
+   * Scales the path data of an individual path element in an .svg string.
+   * 
+   * @method
+   * @param {string} pathData - A single path in an .svg object.
+   * @param {number} scaleX - Amount by which to scale the path data in the X dimension.
+   * @param {number} scaleY - Amount by which to scale the path data in the Y dimension.
+   * @return {string}
+   */
   scalePathData(pathData, scaleX, scaleY) {
     // This regular expression will match SVG path commands and coordinates
     const regex = /([A-Za-z])|(-?\d+(\.\d+)?(?:e[-+]?\d+)?[, ]?)+/g;
@@ -70,6 +95,12 @@ export default class svgScaler {
     return scaledPathData;
   }
   
+  /**
+   * Returns the scaled .svg string.
+   * 
+   * @method
+   * @return {string}
+   */
   scaledSVG() {
     return this.retStringSVG;
   }
