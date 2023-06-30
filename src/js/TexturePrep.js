@@ -7,7 +7,7 @@ export class TexturePrep{
      * @param {number} [maxWidth=2000] - The maximum width to which a texture can be resized.
      * @param {number} [maxHeight=1300] - The maximum height to which a texture can be resized.
      */
-    constructor(textureReference, maxWidth = 2000, maxHeight = 1300) { // default values are set here, can be overridden
+    constructor(textureReference, maxWidth = 1800, maxHeight = 1300) { // default values are set here, can be overridden
         this.textureReference = textureReference // an instance of objectTexture or stringTexture from main code
         this.textureLoader = new THREE.TextureLoader()
         this.maxWidth = maxWidth

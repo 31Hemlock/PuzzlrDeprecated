@@ -1,5 +1,3 @@
-
-
 html,
 body
 {
@@ -7,6 +5,8 @@ body
     margin:0px;
     padding:0px;
 }
+
+
 #Application {
   position:relative;
   display: flex;
@@ -275,8 +275,8 @@ form {
 }
 
 #imagePreview {
-  max-width: 500px;
-  max-height: 400px;
+  max-width: 100%;
+  max-height: 300px;
   display: block;
   margin: 0 auto;
   position: relative;
@@ -285,13 +285,11 @@ form {
   opacity: 0;
   transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out;
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-
-
 }
-
 
 #imagePreviewContainer {
   z-index:0;
+  max-width:50%;
 }
 
 .pin-button {
@@ -432,6 +430,7 @@ input[type=checkbox]:checked::before {
 #main {
   position:absolute;
   z-index:0;
+  height:100%;
 }
 
 
@@ -565,3 +564,5 @@ input[type=checkbox]:checked::before {
 .controls-inner {
   position:relative;
 }
+
+

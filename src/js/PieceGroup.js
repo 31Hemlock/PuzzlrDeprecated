@@ -485,7 +485,7 @@ export class PieceGroup extends THREE.Group {
           if (!isTimerRunning) {
               inactivityTimer = setTimeout(function() {
                   main.mainMenu.open();
-              }, 2000);
+              }, 3000);
               isTimerRunning = true;
           }
       }

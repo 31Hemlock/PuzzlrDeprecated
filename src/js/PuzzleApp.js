@@ -449,7 +449,7 @@ export class PuzzleApp {
      * @param {string} svgString - A string representing an svg file.
      * @return {void}
      */
-    async init(image = 'images/7Cw2iDV.jpeg', svgString) {
+    async init(image = 'menuImages/37.jpg', svgString) {
         this.imgUrl = image
         this.svgString = svgString
         let puzzleType = this.mainMenu.settingPuzzleType
@@ -458,7 +458,13 @@ export class PuzzleApp {
         } else {
             this.imagePreview = new ImagePreview(image)
         }
-        let texturePrepper = new TexturePrep(image)
+
+        const canvasBounds = this.renderer.domElement.getBoundingClientRect();
+      
+        // Adjust mouse coordinates based on the canvas position within the viewport
+
+        let texturePrepper;
+        texturePrepper = new TexturePrep(image)
         let texture = await texturePrepper.init()
         let avgColor = utils.getAverageColor(texture)
         let resultColor = utils.complementaryThreeColor(avgColor);
@@ -881,14 +887,15 @@ export class PuzzleApp {
        * @method
        * @param {number} value - Position of mouse along an axis.
        * @param {number} threshold - Beyond this threshold, dragging a piece moves the camera.
+       * @param {number} speedFactor - Factor to increase speed of camera movement.
        * @return {number} - Returns a velocity by which to move the camera.
        */
-      mapMousePositionToSpeed(value, threshold) {
+      mapMousePositionToSpeed(value, threshold, speedFactor) {
         const deadzone = 1 - threshold;
         if (Math.abs(value) < deadzone) {
           return 0;
         } else {
-          return (Math.abs(value) - deadzone) * Math.sign(value);
+          return (Math.abs(value) - deadzone) * Math.sign(value) * speedFactor;
         }
       }
       
@@ -978,8 +985,8 @@ export class PuzzleApp {
                 // this.camera.position.x += (this.mouse.x * sensitivity - this.camera.position.x) * 0.05;
                 // this.camera.position.y += (this.mouse.y * sensitivity - this.camera.position.y) * 0.05;
                 const threshold = 0.4; // Adjust this value to change the size of the non-moving zone
-                const speedX = this.mapMousePositionToSpeed(this.mouse.x, threshold);
-                const speedY = this.mapMousePositionToSpeed(this.mouse.y, threshold);
+                const speedX = this.mapMousePositionToSpeed(this.mouse.x, threshold, 3);
+                const speedY = this.mapMousePositionToSpeed(this.mouse.y, threshold, 3);
                 const targetPositionX = this.camera.position.x + speedX * sensitivity;
                 const targetPositionY = this.camera.position.y + speedY * sensitivity;
               
@@ -1138,7 +1145,7 @@ export class PuzzleApp {
               }
       
         }
-      }
+    }
 
       /**
        * Deprecated function for sorting PieceGroups by amount of child Piece objects.
@@ -1148,92 +1155,92 @@ export class PuzzleApp {
        */
       sortPieceGroupsByChildrenCount(pieceGroups) {
         return pieceGroups.sort((a, b) => a.children.length - b.children.length);
-      }
+    }
 
-      /**
-       * Deprecated function for finding the next position for a piece while the pieces are being sorted.
-       */
-      getNextPosition(currentX, currentY, currentRowMaxHeight, pieceGroup, distance) {
-        const nextX = currentX + pieceGroup.width + distance;
-        if (nextX > window.innerWidth) {
-          return {
-            x: 0,
-            y: currentY + currentRowMaxHeight + distance,
-            rowMaxHeight: pieceGroup.height,
-          };
-        }
+    /**
+     * Deprecated function for finding the next position for a piece while the pieces are being sorted.
+     */
+    getNextPosition(currentX, currentY, currentRowMaxHeight, pieceGroup, distance) {
+    const nextX = currentX + pieceGroup.width + distance;
+    if (nextX > window.innerWidth) {
         return {
-          x: nextX,
-          y: currentY,
-          rowMaxHeight: Math.max(currentRowMaxHeight, pieceGroup.height),
+        x: 0,
+        y: currentY + currentRowMaxHeight + distance,
+        rowMaxHeight: pieceGroup.height,
         };
-      }
+    }
+        return {
+            x: nextX,
+            y: currentY,
+            rowMaxHeight: Math.max(currentRowMaxHeight, pieceGroup.height),
+        };
+    }
       
-      /**
-       * Deprecated function for determining the coordinates of a piece within a grid.
-       */
-      calculatePosition(index, distance, width, height) {
+    /**
+     * Deprecated function for determining the coordinates of a piece within a grid.
+     */
+    calculatePosition(index, distance, width, height) {
         const x = (index % width) * distance;
         const y = Math.floor(index / width) * distance;
         return new THREE.Vector3(x, y, 0);
-      }
+    }
 
 
-      /**
-       * Deprecated function for organizing pieces in a grid.
-       */
-      positionObjects(objects, distance = 100, xOffset = 0, yOffset = 0) {
-        let newCameraPos = new THREE.Vector3(this.puzzle.texture.image.width,this.puzzle.texture.image.height,this.puzzle.texture.image.width + this.puzzle.texture.image.height)
-        utils.moveObjectToPosition(this.camera, newCameraPos)
-        let currentX = xOffset;
-        let currentY = yOffset;
-        let currentRowMaxHeight = 0;
-        const availableWidth = window.innerWidth;
-      
-        objects.forEach((object) => {
-          if (currentX + object.width > availableWidth) {
-            currentX = xOffset;
-            currentY += currentRowMaxHeight + distance;
-            currentRowMaxHeight = 0;
-          }
-      
-          const targetPosition = new THREE.Vector3(currentX, currentY, 0);
-          utils.moveObjectToPosition(object, targetPosition);
-      
-          currentX += object.width + distance;
-          currentRowMaxHeight = Math.max(currentRowMaxHeight, object.height);
-        });
-      
-        return currentY + currentRowMaxHeight;
-      }
-      
-      /**
-       * Deprecated helper function for organizing pieces in a grid.
-       */
-      positionPiecesAndPieceGroups(distance = 50, xOffset = -200, yOffset = -200) {
-        let pieces = []
-        let pieceGroup = []
-        for (let object of this.scene.children) {
-          if (object instanceof Piece) {
-            pieces.push(object)
-          } else if (object instanceof PieceGroup) {
-            pieceGroup.push(object)
-          }
+    /**
+     * Deprecated function for organizing pieces in a grid.
+     */
+    positionObjects(objects, distance = 100, xOffset = 0, yOffset = 0) {
+    let newCameraPos = new THREE.Vector3(this.puzzle.texture.image.width,this.puzzle.texture.image.height,this.puzzle.texture.image.width + this.puzzle.texture.image.height)
+    utils.moveObjectToPosition(this.camera, newCameraPos)
+    let currentX = xOffset;
+    let currentY = yOffset;
+    let currentRowMaxHeight = 0;
+    const availableWidth = window.innerWidth;
+    
+    objects.forEach((object) => {
+        if (currentX + object.width > availableWidth) {
+        currentX = xOffset;
+        currentY += currentRowMaxHeight + distance;
+        currentRowMaxHeight = 0;
         }
-        const maxYofPieceGroups = this.positionObjects(pieceGroup, distance, xOffset, yOffset);
-        const yOffsetForPieces = maxYofPieceGroups + distance;
-        this.positionObjects(pieces, distance, xOffset, yOffsetForPieces);
-      }
+    
+        const targetPosition = new THREE.Vector3(currentX, currentY, 0);
+        utils.moveObjectToPosition(object, targetPosition);
+    
+        currentX += object.width + distance;
+        currentRowMaxHeight = Math.max(currentRowMaxHeight, object.height);
+    });
+    
+    return currentY + currentRowMaxHeight;
+    }
+      
+    /**
+     * Deprecated helper function for organizing pieces in a grid.
+     */
+    positionPiecesAndPieceGroups(distance = 50, xOffset = -200, yOffset = -200) {
+    let pieces = []
+    let pieceGroup = []
+    for (let object of this.scene.children) {
+        if (object instanceof Piece) {
+        pieces.push(object)
+        } else if (object instanceof PieceGroup) {
+        pieceGroup.push(object)
+        }
+    }
+    const maxYofPieceGroups = this.positionObjects(pieceGroup, distance, xOffset, yOffset);
+    const yOffsetForPieces = maxYofPieceGroups + distance;
+    this.positionObjects(pieces, distance, xOffset, yOffsetForPieces);
+    }
           
     
       
-      /**
-       * Currently returns a fixed value for piece zoom. Also can return an oscillating value
-       * based on amount of time the piece is held.
-       * 
-       * @param {number} elapsedTime - Amount of time since last tick.
-       * @return {number}
-       */
+    /**
+     * Currently returns a fixed value for piece zoom. Also can return an oscillating value
+     * based on amount of time the piece is held.
+     * 
+     * @param {number} elapsedTime - Amount of time since last tick.
+     * @return {number}
+     */
     mapElapsedTime(elapsedTime) {
         // Clamp elapsedTime between 0 and 1 for ramp-up
         // elapsedTime *= 0.5
@@ -1271,7 +1278,7 @@ export class PuzzleApp {
             source.connect(this.audioContext.destination);
             source.start(0);    
         }
-      }
+    }
 
     /**
      * Checks whether a URL leads to an actual image file or not.
@@ -1321,7 +1328,6 @@ export class PuzzleApp {
         this.dragActiveObj = null
         this.imagePreview.setInteractive()
         this.playSound(0, this.mainMenu.settingSound.checked);
-        console.log(event.object)
         event.object.moved()
         // for (let i = this.scene.children.length - 1; i >= 0; i--) {
         //     const child = this.scene.children[i];
@@ -1363,7 +1369,6 @@ export class PuzzleApp {
             return
         }
         if (this.dragActiveObj) {
-            console.log(event.keyCode)
 
             switch(event.keyCode) {
                 case 81 || 65 || 37:
@@ -1465,10 +1470,6 @@ export class PuzzleApp {
 
         if (event.keyCode == 48) {
             this.positionPiecesAndPieceGroups()
-        }
-        if (event.keyCode == 49) {
-            document.getElementById("backgroundVideo").src = "videos/jf1.mp4"
-            document.getElementById("backgroundVideo")
         }
         if (event.keyCode == 32) {
             event.preventDefault()
